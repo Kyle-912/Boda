@@ -1,0 +1,21 @@
+{
+    "cSpell.ignoreWords": [
+        "AHBCLK",
+        "GPIOA",
+        "GPIOB",
+        "GPIOC",
+        "GPIOH",
+        "HCLK",
+        "HSICALIBRATION",
+        "HWCONTROL",
+        "PLLM",
+        "PLLN",
+        "PLLP",
+        "PLLQ",
+        "PLLR",
+        "RCC_CLOCKTYPE_PCLK1",
+        "RCC_CLOCKTYPE_PCLK2",
+        "USART",
+        "huart"
+    ]
+}
