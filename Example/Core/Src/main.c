@@ -101,7 +101,7 @@ int main(void)
   while (1)
   {
     HAL_Delay(100);
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);//test
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
     if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET)
     {
