@@ -106,7 +106,6 @@ int main(void)
     if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET)
     {
       HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
-      HAL_SPI_Transmit();
     }
 
     /* USER CODE END WHILE */
