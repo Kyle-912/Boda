@@ -1,7 +1,6 @@
 # boda
 Capstone project
 
-EFFORT:
 Kyle:
 Aggregated various datasheets/manuals (~1)
 Setup Github (~.5)
