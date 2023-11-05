@@ -17,6 +17,7 @@
         "RCC_CLOCKTYPE_PCLK1",
         "RCC_CLOCKTYPE_PCLK2",
         "USART",
+        "boda",
         "huart"
     ]
 }
