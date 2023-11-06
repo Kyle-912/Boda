@@ -20,6 +20,14 @@ Up to this point the work completed is reading inputs from the controller and te
 * Created a physical testing environment for hardware with waveforms and Diligent Analog Discovery 2 board (2)
 
 **Sean:**
+* Setting up and toubleshooting the work environment for STM32 (3)
+* Reading documentation for the STM32, A4988, and PS2 controller (1)
+* Arduino PWM initialization for the motor driver proof of concept (3)
+* STM32 driver implementation for the stepper motors (8)
+* Debugging and verifying waveforms using DAD2 board (2)
+* Documenting changes and creating diagrams (2)
+* Data compiling and video preparation (1)
+  
 
 
 **Leo:**
