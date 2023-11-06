@@ -12,8 +12,12 @@ Up to this point the work completed is reading inputs from the controller and te
 * Assisted in debugging reading SPI from the controller and driving the motor with ARDUINO/A4988 chip (4)
 
 **Alex:**
-* Researched STM microcontrollers for prototyping
-
+* Researched STM microcontrollers for prototyping with chips that can be used for PCB's (1)
+* Sourced and purchased materials (0.5)
+* Searched for documentation of our microcontrollers, components, and peripherals (3)
+* Researched Playstation 2 (PS2) Controller Protocol and how to implement it on hardware (2)
+* Recreated the PS2 controller protocol on STM Nucleo-F446RE dev board over SPI to send commands and receive current states of the inputs (14) 
+* Created a physical testing environment for hardware with waveforms and Diligent Analog Discovery 2 board (2)
 
 **Sean:**
 
