@@ -192,6 +192,7 @@ int main(void)
   HAL_TIM_Base_Start(&htim3);
   while (1)
   {
+    HAL_Delay(100);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
     __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
     while (__HAL_TIM_GET_COUNTER(&htim3) < 40)
@@ -220,7 +221,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_Delay(1);
+    // HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }

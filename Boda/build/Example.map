@@ -1484,20 +1484,20 @@ LOAD c:/boda_toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-ea
 LOAD c:/boda_toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/lib/thumb/v7e-m+fp/hard\libm.a
 LOAD c:/boda_toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-eabi/10.3.1/thumb/v7e-m+fp/hard\libgcc.a
 
-.debug_info     0x00000000    0x116d7
- .debug_info    0x00000000     0x1c35 build/main.o
- .debug_info    0x00001c35      0x15a build/stm32f4xx_it.o
- .debug_info    0x00001d8f     0x1310 build/stm32f4xx_hal_msp.o
- .debug_info    0x0000309f     0x4061 build/stm32f4xx_hal_tim.o
- .debug_info    0x00007100     0x1c6a build/stm32f4xx_hal_tim_ex.o
- .debug_info    0x00008d6a     0x43e7 build/stm32f4xx_hal_uart.o
- .debug_info    0x0000d151      0xc39 build/stm32f4xx_hal_rcc.o
- .debug_info    0x0000dd8a      0xdc5 build/stm32f4xx_hal_rcc_ex.o
- .debug_info    0x0000eb4f      0x8ac build/stm32f4xx_hal_gpio.o
- .debug_info    0x0000f3fb     0x1192 build/stm32f4xx_hal_cortex.o
- .debug_info    0x0001058d      0xb31 build/stm32f4xx_hal.o
- .debug_info    0x000110be      0x5f7 build/system_stm32f4xx.o
- .debug_info    0x000116b5       0x22 build/startup_stm32f446xx.o
+.debug_info     0x00000000    0x116d8
+ .debug_info    0x00000000     0x1c36 build/main.o
+ .debug_info    0x00001c36      0x15a build/stm32f4xx_it.o
+ .debug_info    0x00001d90     0x1310 build/stm32f4xx_hal_msp.o
+ .debug_info    0x000030a0     0x4061 build/stm32f4xx_hal_tim.o
+ .debug_info    0x00007101     0x1c6a build/stm32f4xx_hal_tim_ex.o
+ .debug_info    0x00008d6b     0x43e7 build/stm32f4xx_hal_uart.o
+ .debug_info    0x0000d152      0xc39 build/stm32f4xx_hal_rcc.o
+ .debug_info    0x0000dd8b      0xdc5 build/stm32f4xx_hal_rcc_ex.o
+ .debug_info    0x0000eb50      0x8ac build/stm32f4xx_hal_gpio.o
+ .debug_info    0x0000f3fc     0x1192 build/stm32f4xx_hal_cortex.o
+ .debug_info    0x0001058e      0xb31 build/stm32f4xx_hal.o
+ .debug_info    0x000110bf      0x5f7 build/system_stm32f4xx.o
+ .debug_info    0x000116b6       0x22 build/startup_stm32f446xx.o
 
 .debug_abbrev   0x00000000     0x1bda
  .debug_abbrev  0x00000000      0x2f2 build/main.o
@@ -1571,20 +1571,20 @@ LOAD c:/boda_toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/../lib/gcc/arm-none-ea
  .debug_ranges  0x00000b38       0x18 build/system_stm32f4xx.o
  .debug_ranges  0x00000b50       0x20 build/startup_stm32f446xx.o
 
-.debug_line     0x00000000     0xef9d
- .debug_line    0x00000000      0x7b3 build/main.o
- .debug_line    0x000007b3      0x177 build/stm32f4xx_it.o
- .debug_line    0x0000092a      0x421 build/stm32f4xx_hal_msp.o
- .debug_line    0x00000d4b     0x4a9e build/stm32f4xx_hal_tim.o
- .debug_line    0x000057e9     0x1cc2 build/stm32f4xx_hal_tim_ex.o
- .debug_line    0x000074ab     0x45ea build/stm32f4xx_hal_uart.o
- .debug_line    0x0000ba95      0xb13 build/stm32f4xx_hal_rcc.o
- .debug_line    0x0000c5a8     0x138b build/stm32f4xx_hal_rcc_ex.o
- .debug_line    0x0000d933      0x6d3 build/stm32f4xx_hal_gpio.o
- .debug_line    0x0000e006      0x774 build/stm32f4xx_hal_cortex.o
- .debug_line    0x0000e77a      0x561 build/stm32f4xx_hal.o
- .debug_line    0x0000ecdb      0x24c build/system_stm32f4xx.o
- .debug_line    0x0000ef27       0x76 build/startup_stm32f446xx.o
+.debug_line     0x00000000     0xef92
+ .debug_line    0x00000000      0x7a8 build/main.o
+ .debug_line    0x000007a8      0x177 build/stm32f4xx_it.o
+ .debug_line    0x0000091f      0x421 build/stm32f4xx_hal_msp.o
+ .debug_line    0x00000d40     0x4a9e build/stm32f4xx_hal_tim.o
+ .debug_line    0x000057de     0x1cc2 build/stm32f4xx_hal_tim_ex.o
+ .debug_line    0x000074a0     0x45ea build/stm32f4xx_hal_uart.o
+ .debug_line    0x0000ba8a      0xb13 build/stm32f4xx_hal_rcc.o
+ .debug_line    0x0000c59d     0x138b build/stm32f4xx_hal_rcc_ex.o
+ .debug_line    0x0000d928      0x6d3 build/stm32f4xx_hal_gpio.o
+ .debug_line    0x0000dffb      0x774 build/stm32f4xx_hal_cortex.o
+ .debug_line    0x0000e76f      0x561 build/stm32f4xx_hal.o
+ .debug_line    0x0000ecd0      0x24c build/system_stm32f4xx.o
+ .debug_line    0x0000ef1c       0x76 build/startup_stm32f446xx.o
 
 .debug_str      0x00000000     0x3da4
  .debug_str     0x00000000      0xed5 build/main.o
