@@ -4,6 +4,7 @@
         "GPIOA",
         "GPIOB",
         "GPIOC",
+        "GPIOD",
         "GPIOH",
         "HCLK",
         "HSICALIBRATION",
