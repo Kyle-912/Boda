@@ -33,4 +33,6 @@ Up to this point the work completed is reading inputs from the controller and te
 **Leo:**
 
 
-**Luke:**
+**Lucas:**
+* Resesarching methods for modeling the mechanics of the arm (5)
+* researching stepper motors for limitations such as temp and stength(2)
