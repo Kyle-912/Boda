@@ -4,6 +4,7 @@
         "GPIOA",
         "GPIOB",
         "GPIOC",
+        "GPIOD",
         "GPIOH",
         "HCLK",
         "HSICALIBRATION",
@@ -15,7 +16,11 @@
         "PLLR",
         "RCC_CLOCKTYPE_PCLK1",
         "RCC_CLOCKTYPE_PCLK2",
+        "TRGO",
         "USART",
-        "huart"
+        "hspi",
+        "htim",
+        "huart",
+        "pinss"
     ]
 }
