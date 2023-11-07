@@ -31,6 +31,12 @@ Up to this point the work completed is reading inputs from the controller and te
 
 
 **Leo:**
+* Researched microcontrollers that encompased different power/ performance requirements. (2)
+* Explored our selected microcontroller manual and relevant peripherals for our project. (3)
+* Researched microstepping to achive higher rpms and smoother roations from stepper motors. (3)
+* Setup Solidworks project for 3D modeling of arm (1)
+* Researched different arms mechanics (4)
+* Researched joints for the removable attachments. This will require some solidworks simulation to make sure that the joint meets our stress and strength requiremnets. (7)
 
 
 **Lucas:**
