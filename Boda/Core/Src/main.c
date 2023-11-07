@@ -45,7 +45,6 @@
 SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
-
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
@@ -57,17 +56,16 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
 static void MX_SPI2_Init(void);
-static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_USART2_UART_Init(void);
+static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 static void PS2_TEST(SPI_HandleTypeDef *hspi);
 static void delay_2_25us(uint16_t us);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
-
 /* USER CODE BEGIN 0 */
 uint8_t *PS2DataIn[9];
 /* USER CODE END 0 */
@@ -100,78 +98,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_SPI2_Init();
-  MX_TIM1_Init();
   MX_TIM3_Init();
+  MX_USART2_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
   char *message = "X has been Pressed\r\n";
-
-  // int Dire  = 2;    //GPIO2 in Arduino UNO --- Direction of stepper motor driver -- D2 = PA_10
-  // int Step = 3;     //GPIO3 in Arduino UNO --- Step of stepper motor driver      -- D3 = PB_3
-  // int Sleep = 4;    //GPIO4 in Arduino UNO --- Control Sleep Mode on A4988       -- D4 = PB_5
-  // int MS3 = 5;      //GPIO5 in Arduino UNO --- MS3 for A4988                     -- D5 = PB_4
-  // int MS2 = 6;      //GPIO6 in Arduino UNO --- MS2 for A4988                     -- D6 = PB_10
-  // int MS1 = 7;      //GPIO7 in Arduino UNO --- MS1 for A4988                     -- D7 = PA_8
-  // Motor Specs
-  const int spr = 200; // Steps per revolution
-  int RPM = 350;       // Motor Speed in revolutions per minute
-  int Microsteps = 1;  // Stepsize (1 for full steps, 2 for half steps, 4 for quarter steps, etc)
-
-  // D2 = PA_10
-  // D3 = PB_3
-  // D4 = PB_5
-  // D5 = PB_4
-  // D6 = PB_10
-  // D7 = PA_8
-
-  // A4988 stepper(spr, Dire, Step, MS1, MS2, MS3);
-  // BasicStepperDriver(steps, dir_pin, step_pin)
-  // stepper.begin(RPM, Microsteps);
-  // BasicStepperDriver::begin(rpm, microsteps)
-
-  // digitalWrite(Step, LOW); // Currently no stepper motor movement
-  // int Step = 3;     //GPIO3 in Arduino UNO --- Step of stepper motor driver
-  // D3 = PB_3
-  // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-
-  // digitalWrite(Dire, LOW);
-  // int Dire  = 2;    //GPIO2 in Arduino UNO --- Direction of stepper motor driver
-  // D2 = PA_10
-  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
-
-  // digitalWrite(dir_pin, HIGH);
-  // int Dire  = 2;    //GPIO2 in Arduino UNO --- Direction of stepper motor driver -- D2 = PA_10
-  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-
-  // digitalWrite(step_pin, LOW);
-  // int Step = 3;     //GPIO3 in Arduino UNO --- Step of stepper motor driver      -- D3 = PB_3
-  // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-
-  // pinMode(dir_pin, OUTPUT);
-  // digitalWrite(dir_pin, HIGH);
-
-  // pinMode(step_pin, OUTPUT);
-  // digitalWrite(step_pin, LOW);
-
-  // if IS_CONNECTED(enable_pin){
-  //   pinMode(enable_pin, OUTPUT);
-  //   disable();
-  // }
-
-  // this->rpm = rpm;
-  // setMicrostep(microsteps);
-
-  // enable();
-
-  // -----------------------------------------
-  // 7 - 0V   = PA_8
-  // 6 - 0V   = PB_10
-  // 5 - 0V   = PB_4
-  // 4 - 5V   = PB_5
-  // 3 - PWM  = PB_3
-  // 2 - 5V   = PA_10
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // 7 - 0V   = PA_8
   // ---------- SWITCHING TO D8 TO RESOLVE CONFLICT ------------------------------
@@ -180,7 +113,7 @@ int main(void)
   // -----------------------------------------------------------------------------
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET); // 5 - 0V   = PB_4
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);   // 4 - 5V   = PB_5
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET); // 3 - PWM  = PB_3
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET); // 3 - PWM  = PB_8
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);  // 2 - 5V   = PA_10
 
   // -----------------------------------------
@@ -190,26 +123,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_TIM_Base_Start(&htim3);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+  __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
+  while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
   while (1)
   {
-    HAL_Delay(100);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-    __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
-    while (__HAL_TIM_GET_COUNTER(&htim3) < 40)
-      ; // wait for the counter to reach the us input in the parameter
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-
-    // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-    // if (HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET)
-    // {
-    //   HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
-    //   HAL_SPI_Transmit(&hspi2, (uint8_t *)message, strlen(message), 100);
-    // }
-
-    // digitalWrite(Sleep, HIGH); //A logic high allows normal operation of the A4988 by removing from sleep
-    // int Sleep = 4;    //GPIO4 in Arduino UNO --- Control Sleep Mode on A4988       -- D4 = PB_5
-    // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+    HAL_Delay(1);
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     PS2_TEST(&hspi2);
     // if the button is x
@@ -221,7 +141,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }
@@ -414,13 +333,13 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 57600;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_8;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
@@ -446,16 +365,15 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -463,39 +381,28 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : LD2_Pin PA8 PA9 PA10 */
+  GPIO_InitStruct.Pin = LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  /*Configure GPIO pins : PB12 PB4 PB5 PB8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /*Configure GPIO pin : SPI_CS */
-  /*
-    HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-
-    GPIO_InitStruct.Pin = SPI1_SC_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(SPI1_SC_GPIO, &GPIO_InitStruct);
-    */
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
