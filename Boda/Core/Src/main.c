@@ -122,20 +122,30 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_TIM_Base_Start(&htim3);
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-  __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
-  while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+  int count = 0;
   while (1)
   {
     HAL_Delay(1);
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-    PS2_TEST(&hspi2);
-    // if the button is x
-    if (PS2DataIn[5] == 0xbf)
+    HAL_TIM_Base_Start(&htim3);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+    __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
+    while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+
+    if (count == 99)
     {
-      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      count = 0;
+      HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+      PS2_TEST(&hspi2);
+      // if the button is x
+      if (PS2DataIn[5] == 0xbf)
+      {
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+    }
+    else
+    {
+      count++;
     }
 
     /* USER CODE END WHILE */
