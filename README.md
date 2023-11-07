@@ -36,3 +36,9 @@ Up to this point the work completed is reading inputs from the controller and te
 **Lucas:**
 * Resesarching methods for modeling the mechanics of the arm (5)
 * researching stepper motors for limitations such as temp and stength(2)
+* Researched Controller Protocol (2)
+* found datasheets/manuals (1)
+* setup Arduino PWM for the motor driver (3)
+* learned the configuration code generator and ide (4)
+* collecting required tools for modeling the arms in CAD (1)
+* reviewed CAD techniques and methods in preparation to model the robot arm (2)
