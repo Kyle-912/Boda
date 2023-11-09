@@ -128,7 +128,7 @@ int main(void)
     __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
     while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-    HAL_Delay(1);
+    while (__HAL_TIM_GET_COUNTER(&htim3) < 540); // wait for the counter to reach the us input in the parameter
 
     if (count == 99)
     {
