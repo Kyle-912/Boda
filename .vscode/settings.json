@@ -21,6 +21,7 @@
         "hspi",
         "htim",
         "huart",
+        "mylibrary",
         "pinss"
     ]
 }

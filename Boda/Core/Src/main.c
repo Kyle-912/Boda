@@ -28,6 +28,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef int bool; // Define a custom boolean type
+#define true 1    // Define true as 1
+#define false 0   // Define false as 0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -120,30 +123,26 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int count = 0;
-  HAL_TIM_Base_Start(&htim3);
+  bool toggle = true;
+  TIM3->CR1 |= TIM_CR1_CEN;
   while (1)
   {
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-    __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
-    while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-    while (__HAL_TIM_GET_COUNTER(&htim3) < 540); // wait for the counter to reach the us input in the parameter
-
-    if (count == 99)
+    if (toggle)
     {
-      count = 0;
-      HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-      PS2_TEST(&hspi2);
-      // if the button is x
-      if (PS2DataIn[5] == 0xbf)
-      {
-        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
-      }
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+      TIM3->CNT = 0;
+      while (TIM3->CNT < 40);
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+      while (TIM3->CNT < 2040);
     }
-    else
+
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    PS2_TEST(&hspi2);
+    // if the button is x
+    if (PS2DataIn[5] == 0xbf)
     {
-      count++;
+      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      toggle = !toggle;
     }
 
     /* USER CODE END WHILE */
@@ -457,14 +456,14 @@ static void PS2_TEST(SPI_HandleTypeDef *hspi)
     delay_2_25us(1);
   }
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
+  delay_2_25us(14);
 }
 
 void delay_2_25us(uint16_t us)
 {
   TIM1->CNT = 0;
   TIM1->CR1 |= TIM_CR1_CEN;
-  while (TIM1->CNT < us)
-    ;
+  while (TIM1->CNT < us);
   TIM1->CR1 |= TIM_CR1_CEN;
 }
 
