@@ -128,6 +128,8 @@ int main(void)
   TIM3->CR1 |= TIM_CR1_CEN;
   while (1)
   {
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
     if (toggle)
     {
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
@@ -137,7 +139,6 @@ int main(void)
       while (TIM3->CNT < 540);
     }
 
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     PS2_TEST(&hspi2);
     // if the button is x
     if (PS2DataIn[5] == 0xbf)
@@ -150,8 +151,6 @@ int main(void)
       HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
       toggle = false;
     }
-
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
