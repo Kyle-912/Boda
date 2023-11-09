@@ -107,13 +107,11 @@ int main(void)
   char *message = "X has been Pressed\r\n";
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // 7 - 0V   = PA_8
-  // ---------- SWITCHING TO D8 TO RESOLVE CONFLICT ------------------------------
-  // HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);   // 6 - 0V   = PB_10
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // 6 - 0V   = PA_9
   // -----------------------------------------------------------------------------
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET); // 5 - 0V   = PB_4
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);   // 4 - 5V   = PB_5
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET); // 3 - PWM  = PB_8
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET); // 3 - PWM  = PB_8
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);  // 2 - 5V   = PA_10
 
   // -----------------------------------------
@@ -123,14 +121,14 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int count = 0;
+  HAL_TIM_Base_Start(&htim3);
   while (1)
   {
-    HAL_Delay(1);
-    HAL_TIM_Base_Start(&htim3);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
     __HAL_TIM_SET_COUNTER(&htim3, 0); // set the counter value a 0
     while (__HAL_TIM_GET_COUNTER(&htim3) < 40); // wait for the counter to reach the us input in the parameter
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    while (__HAL_TIM_GET_COUNTER(&htim3) < 540); // wait for the counter to reach the us input in the parameter
 
     if (count == 99)
     {
