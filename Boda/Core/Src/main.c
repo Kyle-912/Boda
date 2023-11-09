@@ -107,7 +107,8 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  char *message = "X has been Pressed\r\n";
+  char *messageX = "X has been Pressed\r\n";
+  char *messageO = "O has been Pressed\r\n";
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // 7 - 0V   = PA_8
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // 6 - 0V   = PA_9
@@ -141,9 +142,15 @@ int main(void)
     // if the button is x
     if (PS2DataIn[5] == 0xbf)
     {
-      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
-      toggle = !toggle;
+      HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
+      toggle = true;
     }
+    else if (PS2DataIn[5] == 0xdf)
+    {
+      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
+      toggle = false;
+    }
+
 
     /* USER CODE END WHILE */
 
