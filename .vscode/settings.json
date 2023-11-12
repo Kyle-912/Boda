@@ -23,5 +23,8 @@
         "huart",
         "mylibrary",
         "pinss"
-    ]
+    ],
+    "files.associations": {
+        "stm32f4xx_hal.h": "c"
+    }
 }

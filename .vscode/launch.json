@@ -4,7 +4,7 @@
         {
                  "name": "Cortex Debug",
             "cwd": "${workspaceFolder}",
-            "executable": "./Example/build/Example.elf",
+            "executable": "./Boda/build/Boda.elf",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",

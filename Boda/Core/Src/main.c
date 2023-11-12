@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "string.h"
+#include "controller_driver.h"
 
 /* USER CODE END Includes */
 
@@ -64,13 +65,11 @@ static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-static void PS2_TEST(SPI_HandleTypeDef *hspi);
-static void delay_2_25us(uint16_t us);
+static void PS2_Init(PS2ControllerHandler* pPs2);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t *PS2DataIn[9];
 /* USER CODE END 0 */
 
 /**
@@ -107,8 +106,9 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  char *messageX = "X has been Pressed\r\n";
-  char *messageO = "O has been Pressed\r\n";
+  char *message = "Init\r\n";
+  uint8_t joystickLeft = 0;
+  uint8_t joystickRight = 0;
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // 7 - 0V   = PA_8
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // 6 - 0V   = PA_9
@@ -119,12 +119,15 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);  // 2 - 5V   = PA_10
 
   // -----------------------------------------
+  
+  PS2ControllerHandler ps2 = {0};
+  PS2_Init(&ps2);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  bool toggle = true;
+  bool toggle = false;
   TIM3->CR1 |= TIM_CR1_CEN;
   while (1)
   {
@@ -138,17 +141,76 @@ int main(void)
     }
 
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-    PS2_TEST(&hspi2);
+    PS2_Update(&ps2);
     // if the button is x
-    if (PS2DataIn[5] == 0xbf)
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
-      toggle = true;
+    if (Is_Button_Pressed(&ps2, X) == true) {
+      message = "X is Pressed\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      //toggle = true;
     }
-    else if (PS2DataIn[5] == 0xdf)
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
+    if (Is_Button_Pressed(&ps2, CIRCLE)) {
+      message = "CIRCLE is Pressed\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      //toggle = false;
+    }
+    if (Is_Button_Pressed(&ps2, SQUARE)) {
+      message = "SQUARE is Pressed\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
       toggle = false;
+    }
+    if (Is_Button_Pressed(&ps2, TRIANGLE)) {
+      message = "TRIANGLE is Pressed\r\n";
+      HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      toggle = false;
+    }
+
+    joystickLeft = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+    if (joystickLeft != NEUTRAL){
+      if(joystickLeft < 0x50){
+        message = "Joystick Left Moving Left\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+      else{
+        message = "Joystick Left Moving Right\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+    }
+
+    joystickLeft = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+    if (joystickLeft != NEUTRAL){
+      if(joystickLeft < 0x50){
+        message = "Joystick Left Moving Up\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+      else{
+        message = "Joystick Left Moving Down\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+    }
+
+
+    joystickRight = Is_Joystick_Right_Moved(&ps2, JOYSTICK_R_RL);
+    if (joystickRight != NEUTRAL){
+      if(joystickRight < 0x50){
+        message = "Joystick Right Moving Left\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+      else{
+        message = "Joystick Right Moving Right\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+    }
+
+    joystickRight = Is_Joystick_Right_Moved(&ps2, JOYSTICK_R_UD);
+    if (joystickRight != NEUTRAL){
+      if(joystickRight < 0x50){
+        message = "Joystick Right Moving Up\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
+      else{
+        message = "Joystick Right Moving Down\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message, strlen(message), 100);
+      }
     }
 
 
@@ -421,59 +483,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-static void PS2_TEST(SPI_HandleTypeDef *hspi)
-{
-  uint8_t temp = 0b00000001;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
-
-  // 0x01
-  // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[0], 1, 10);
-
-  HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-  PS2DataIn[0] = SPI2->DR;
-
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-  delay_2_25us(1);
-
-  temp = 0b01000010;
-
-  // 0x42
-  // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[1], 1, 10);
-
-  HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-  PS2DataIn[1] = SPI2->DR;
-
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-  delay_2_25us(1);
-
-  // 0x00 7 times---------------------------
-  temp = 0x00;
-  for (uint8_t i = 0; i < 7; i++)
-  {
-    // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[i + 2], 1, 10);
-
-    HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-    PS2DataIn[i + 2] = SPI2->DR;
-
-    HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-    delay_2_25us(1);
-  }
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
-  delay_2_25us(14);
+static void PS2_Init(PS2ControllerHandler* pPs2){
+  pPs2->GPIO = GPIO_PIN_12;
+  pPs2->PIN = GPIOB;
+  pPs2->spi = &hspi2;
+  pPs2->tim = &htim1;
+  pPs2->tim->Instance->CNT = 0;
+  pPs2->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
-
-void delay_2_25us(uint16_t us)
-{
-  TIM1->CNT = 0;
-  TIM1->CR1 |= TIM_CR1_CEN;
-  while (TIM1->CNT < us);
-  TIM1->CR1 |= TIM_CR1_CEN;
-}
-
 /* USER CODE END 4 */
 
 /**
