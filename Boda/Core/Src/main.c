@@ -137,7 +137,7 @@ int main(void)
       TIM3->CNT = 0;
       while (TIM3->CNT < 40);
       HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-      while (TIM3->CNT < 640);
+      while (TIM3->CNT < 1040);
     }
 
     // if the button is x
