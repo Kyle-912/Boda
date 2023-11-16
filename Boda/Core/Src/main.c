@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "string.h"
+#include "A4988.c"
 
 /* USER CODE END Includes */
 
@@ -107,6 +108,11 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
+  // Enable TIM3 global Interrupt & set priority
+  HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM3_IRQn);
+
+
   char *messageX = "X has been Pressed\r\n";
   char *messageO = "O has been Pressed\r\n";
 
@@ -125,32 +131,44 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   bool toggle = true;
-  TIM3->CR1 |= TIM_CR1_CEN;
+  // TIM3->CR1 |= TIM_CR1_CEN;
+
+  
+
+  HAL_TIM_Base_Start_IT(&htim3);
+
   while (1)
   {
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-    if (toggle)
-    {
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-      TIM3->CNT = 0;
-      while (TIM3->CNT < 40);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-      while (TIM3->CNT < 540);
-    }
 
-    PS2_TEST(&hspi2);
-    // if the button is x
-    if (PS2DataIn[5] == 0xbf)
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
-      toggle = true;
-    }
-    else if (PS2DataIn[5] == 0xdf)
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
-      toggle = false;
-    }
+
+
+
+
+
+    // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+    // if (toggle)
+    // {
+    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+    //   TIM3->CNT = 0;
+    //   while (TIM3->CNT < 40);
+    //   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+    //   while (TIM3->CNT < 540);
+    // }
+
+    // PS2_TEST(&hspi2);
+    // // if the button is x
+    // if (PS2DataIn[5] == 0xbf)
+    // {
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
+    //   toggle = true;
+    // }
+    // else if (PS2DataIn[5] == 0xdf)
+    // {
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
+    //   toggle = false;
+    // }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -425,6 +443,16 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// Callback function
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    if (htim->Instance == TIM3) {
+        // Code to execute when the timer interrupt occurs
+        char *message1 = "Timer Elapsed\r\n";
+        HAL_UART_Transmit(&huart2, (uint8_t *)message1, strlen(message1), 100);
+        // For example, toggle an LED or send a message
+    }
+}
 
 static void PS2_TEST(SPI_HandleTypeDef *hspi)
 {
