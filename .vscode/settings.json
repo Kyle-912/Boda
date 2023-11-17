@@ -9,6 +9,7 @@
         "HCLK",
         "HSICALIBRATION",
         "HWCONTROL",
+        "NVIC",
         "PLLM",
         "PLLN",
         "PLLP",
