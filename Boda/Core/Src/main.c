@@ -150,7 +150,7 @@ int main(void)
 
   float rpm = 400;
   short microsteps = FULL_STEPS;
-  double deg = 720;
+  double deg = 60;
   const short spr = 200;
 
   stepper stepper_motor_1;
@@ -169,14 +169,14 @@ int main(void)
   while (1)
   {
 
-    // HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-    if (toggle)
-    {
+    // if (toggle)
+    // {
       move_stepper_deg(motor1, deg);
-      HAL_Delay(500);
-      toggle = false;
-    }
+      HAL_Delay(5000);
+      // toggle = false;
+    // }
 
     PS2_TEST(&hspi2);
     // if the button is x
