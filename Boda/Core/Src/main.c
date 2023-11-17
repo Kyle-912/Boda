@@ -120,38 +120,18 @@ int main(void)
   char *messageX = "X has been Pressed\r\n";
   char *messageO = "O has been Pressed\r\n";
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET); // 7 - 0V   = PA_8
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // 6 - 0V   = PA_9
-  // -----------------------------------------------------------------------------
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET); // 5 - 0V   = PB_4
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);   // 4 - 5V   = PB_5
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET); // 3 - PWM  = PB_8
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);  // 2 - 5V   = PA_10
-
-  //===================================================================================
-  // int Dire  = 2;    //GPIO2 in Arduino UNO --- Direction of stepper motor driver
-  // int Step = 3;     //GPIO3 in Arduino UNO --- Step of stepper motor driver
-  // int Sleep = 4;    //GPIO4 in Arduino UNO --- Control Sleep Mode on A4988
-  // int MS3 = 5;      //GPIO5 in Arduino UNO --- MS3 for A4988
-  // int MS2 = 6;      //GPIO6 in Arduino UNO --- MS2 for A4988
-  // int MS1 = 7;      //GPIO7 in Arduino UNO --- MS1 for A4988
-  //===================================================================================
-
-  // -----------------------------------------
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   bool toggle = true;
-  // TIM3->CR1 |= TIM_CR1_CEN;
 
   // HAL_TIM_Base_Start_IT(&htim3);
 
-  float rpm = 400;
+  float rpm = 200;
   short microsteps = FULL_STEPS;
-  double deg = 2880;
-  const short spr = 200;
+  double deg = 720;
+  const short spr = 200;  // Steps per revolution 
 
   stepper stepper_motor_1;
   motor1 = &stepper_motor_1;
@@ -174,7 +154,7 @@ int main(void)
     if (toggle)
     {
       move_stepper_deg(motor1, deg);
-      HAL_Delay(200);
+      // HAL_Delay(100);
       toggle = false;
     }
 
@@ -479,20 +459,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       {
         HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, RESET);
         __HAL_TIM_SET_AUTORELOAD(motor1->timer, motor1->step_pulse);
-        // motor1->timer->Instance->ARR = motor1->step_pulse;
       }
       else
       {
         HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, SET);
         __HAL_TIM_SET_AUTORELOAD(motor1->timer, 20);
-        // motor1->timer->Instance->ARR = 40;
       }
       __HAL_TIM_SET_COUNTER(motor1->timer, 0);
     }
-    // Code to execute when the timer interrupt occurs
-    // char *message1 = "Timer Elapsed\r\n";
-    // HAL_UART_Transmit(&huart2, (uint8_t *)message1, strlen(message1), 100);
-    // For example, toggle an LED or send a message
   }
 }
 
