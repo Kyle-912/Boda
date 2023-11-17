@@ -3,6 +3,11 @@
 
 #include "stm32f4xx_hal.h"
 
+// Microstep options
+#define FULL_STEPS 1
+#define HALF_STEPS 2
+#define QUART_STEPS 3
+
 typedef struct {
     short steps;
     short dir_state;
@@ -18,6 +23,9 @@ typedef struct {
 
     GPIO_TypeDef * step_port;
     uint16_t step_pin;
+
+    GPIO_TypeDef * sleep_port;
+    uint16_t sleep_pin;
 
     GPIO_TypeDef * ms1_port;
     uint16_t ms1_pin;
