@@ -125,12 +125,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   bool toggle = true;
+  bool prev_toggle;
 
   // HAL_TIM_Base_Start_IT(&htim3);
 
-  float rpm = 200;
+  float rpm = 300;
   short microsteps = FULL_STEPS;
-  double deg = 720;
+  double deg = 10;
   const short spr = 200;  // Steps per revolution 
 
   stepper stepper_motor_1;
@@ -150,13 +151,7 @@ int main(void)
   {
 
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-    if (toggle)
-    {
-      move_stepper_deg(motor1, deg);
-      // HAL_Delay(100);
-      toggle = false;
-    }
+    prev_toggle = toggle;
 
     PS2_TEST(&hspi2);
     // if the button is x
@@ -165,6 +160,18 @@ int main(void)
       HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
       toggle = true;
     }
+    else{
+      toggle = false;
+    }
+
+    if (toggle && !motor1->step_count)
+    {
+      move_stepper_deg(motor1, deg);
+      // HAL_Delay(5000);
+      // toggle = false;
+    }
+    // move_stepper_deg(motor1, deg);
+    // HAL_Delay(5000);
     // else if (PS2DataIn[5] == 0xdf)
     // {
     //   HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
@@ -440,33 +447,76 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void pulse_stepper(stepper *motor){
+  // motor1->steps_remaining--;
+  if (motor->steps_remaining <= 0)
+  {
+    HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+    HAL_TIM_Base_Stop_IT(motor->timer);
+  }
+  // We should pull HIGH for at least 1-2us (step_high_min)
+  else
+  {
+    GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor->step_port, motor1->step_pin);
+    if (currentPinState == GPIO_PIN_SET)
+    {
+      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+      __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
+    }
+    else
+    {
+      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
+      __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
+      motor->steps_remaining--;
+    }
+    __HAL_TIM_SET_COUNTER(motor->timer, 0);
+  }
+}
+
+
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == motor1->timer->Instance)
   {
-    motor1->steps_remaining--;
-    if (motor1->steps_remaining <= 0)
-    {
-      HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, RESET);
-      HAL_TIM_Base_Stop_IT(htim);
-    }
-    // We should pull HIGH for at least 1-2us (step_high_min)
-    else
-    {
-      GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor1->step_port, motor1->step_pin);
-      if (currentPinState == GPIO_PIN_SET)
-      {
-        HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, RESET);
-        __HAL_TIM_SET_AUTORELOAD(motor1->timer, motor1->step_pulse);
-      }
-      else
-      {
-        HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, SET);
-        __HAL_TIM_SET_AUTORELOAD(motor1->timer, 20);
-      }
-      __HAL_TIM_SET_COUNTER(motor1->timer, 0);
-    }
+    pulse_stepper(motor1);
+
+
+    // if (motor1->steps_remaining <= 0)
+    // {
+    //   HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, RESET);
+    //   HAL_TIM_Base_Stop_IT(motor1->timer);
+    // }
+    // // We should pull HIGH for at least 1-2us (step_high_min)
+    // else
+    // {
+    //   GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor1->step_port, motor1->step_pin);
+    //   if (currentPinState == GPIO_PIN_SET)
+    //   {
+    //     HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, RESET);
+    //     __HAL_TIM_SET_AUTORELOAD(motor1->timer, motor1->step_pulse);
+    //   }
+    //   else
+    //   {
+    //     HAL_GPIO_WritePin(motor1->step_port, motor1->step_pin, SET);
+    //     __HAL_TIM_SET_AUTORELOAD(motor1->timer, 20);
+    //     motor1->steps_remaining--;
+    //   }
+    //   __HAL_TIM_SET_COUNTER(motor1->timer, 0);
+    // }
+
+  }
+  else if (htim->Instance == motor2->timer->Instance)
+  {
+    pulse_stepper(motor2);
+  }
+  else if (htim->Instance == motor3->timer->Instance)
+  {
+    pulse_stepper(motor3);
+  }
+  else if (htim->Instance == motor4->timer->Instance)
+  {
+    pulse_stepper(motor4);
   }
 }
 

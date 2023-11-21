@@ -125,6 +125,13 @@ void move_stepper_deg(stepper *motor, double deg) {
         return;
     }
 
+    // First attempt at opposite rotation
+    if (deg < 0)
+    {
+        deg = deg * -1;
+        motor->dir_state = 1;
+    }
+
     // Set step output LOW
     HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
 
