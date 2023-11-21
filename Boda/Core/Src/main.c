@@ -163,7 +163,7 @@ int main(void)
     PS2_Update(&ps2);
 
     // if the button is x
-    if (ps2.PS2Data[BUTTON_INDEX] == X)
+    if (Is_Button_Pressed(&ps2, X))
     {
       HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageX), 100);
       toggle1 = true;
@@ -173,7 +173,7 @@ int main(void)
       toggle1 = false;
     }
 
-    if (ps2.PS2Data[BUTTON_INDEX] == CIRCLE)
+    if (Is_Button_Pressed(&ps2, CIRCLE))
     {
       HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
       toggle2 = true;
