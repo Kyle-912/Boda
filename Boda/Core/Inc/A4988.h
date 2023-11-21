@@ -12,6 +12,7 @@ typedef struct {
     short steps;
     short dir_state;
     uint16_t enable_pin;
+    uint8_t enable_microsteps;
     long step_count;
     long steps_remaining;
     short microsteps;

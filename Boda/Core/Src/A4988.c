@@ -15,6 +15,7 @@ void init_stepper(stepper *motor, short spr)
     motor->microsteps = 1; // Default = 1 (full steps)
     motor->rpm = 0;
     motor->step_pulse = 0;
+    motor->enable_microsteps = 1;
 
     motor->dir_port = NULL; // Default = Null (pointer)
     motor->dir_pin = 0;     // Default = 0 (uint16_t)
@@ -100,8 +101,13 @@ void set_dir_state(stepper *motor, short dir_state)
     motor->dir_state = dir_state;
 }
 
-uint8_t setMicrostep(stepper *motor)
-{
+
+// set dir state (clockwise/counter-clockwise)
+void set_micro_en(stepper *motor, uint8_t micro_en) {
+    motor->enable_microsteps = micro_en;
+}
+
+uint8_t setMicrostep(stepper *motor) {
     int i = 0;
     while (i < MS_TABLE_SIZE)
     {
@@ -130,14 +136,20 @@ long calcStepsForRotation(stepper *motor, double deg)
     return deg * motor->steps * motor->microsteps / 360;
 }
 
-void move_stepper_deg(stepper *motor, double deg)
-{
-
-    if (setMicrostep(motor) == -1)
-    {
-        // Error in setting microsteps
-        return;
+void move_stepper_deg(stepper *motor, double deg) {
+    
+    if (motor->enable_microsteps){
+        if (setMicrostep(motor) == -1)
+        {
+            // Error in setting microsteps
+            return;
+        }
     }
+    // if (setMicrostep(motor) == -1)
+    // {
+    //     // Error in setting microsteps
+    //     return;
+    // }
 
     // First attempt at opposite rotation
     if (deg < 0)
