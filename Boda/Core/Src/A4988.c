@@ -67,9 +67,15 @@ void init_ms1_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin)
 
 void init_ms2_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin)
 {
+    motor->ms2_port = port;
+    motor->ms2_pin = pin;
+}
 
 void init_ms3_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin)
 {
+    motor->ms3_port = port;
+    motor->ms3_pin = pin;
+}
 
 // set microsteps
 void set_microsteps(stepper *motor, short microsteps)
@@ -131,7 +137,7 @@ long calcStepsForRotation(stepper *motor, double deg)
 }
 
 void move_stepper_deg(stepper *motor, double deg) {
-    
+
     if (motor->enable_microsteps){
         if (setMicrostep(motor) == -1)
         {
