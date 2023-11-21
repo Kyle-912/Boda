@@ -1,4 +1,4 @@
-#include "controller_driver.h"
+#include "PS2.h"
 
 // Called before button/joystick check to get latest inputs
 void PS2_Update(PS2ControllerHandler *ps2i)
