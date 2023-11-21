@@ -71,6 +71,8 @@ static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
+
+void PS2_Init(PS2ControllerHandler *ps2);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -115,6 +117,8 @@ int main(void)
   HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
+  PS2_Init(&ps2);
+
   char *messageX = "X has been Pressed\r\n";
   char *messageO = "O has been Pressed\r\n";
 
@@ -123,14 +127,13 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   bool toggle = true;
-  bool prev_toggle;
 
   // HAL_TIM_Base_Start_IT(&htim3);
 
   float rpm = 300;
   short microsteps = FULL_STEPS;
   double deg = 10;
-  const short spr = 200;  // Steps per revolution
+  const short spr = 200; // Steps per revolution
 
   stepper stepper_motor_1;
   motor1 = &stepper_motor_1;
@@ -147,18 +150,15 @@ int main(void)
 
   while (1)
   {
-
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-    prev_toggle = toggle;
-
-    PS2_TEST(&hspi2);
+    PS2_Update(&ps2);
     // if the button is x
-    if (PS2DataIn[5] == 0xbf)
+    if (ps2.PS2Data[BUTTON_INDEX] == X)
     {
       HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
       toggle = true;
     }
-    else{
+    else
+    {
       toggle = false;
     }
 
@@ -445,7 +445,8 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void pulse_stepper(stepper *motor){
+void pulse_stepper(stepper *motor)
+{
   // motor1->steps_remaining--;
   if (motor->steps_remaining <= 0)
   {
@@ -471,14 +472,12 @@ void pulse_stepper(stepper *motor){
   }
 }
 
-
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   if (htim->Instance == motor1->timer->Instance)
   {
     pulse_stepper(motor1);
-
 
     // if (motor1->steps_remaining <= 0)
     // {
@@ -502,7 +501,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     //   }
     //   __HAL_TIM_SET_COUNTER(motor1->timer, 0);
     // }
-
   }
   else if (htim->Instance == motor2->timer->Instance)
   {
@@ -518,57 +516,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
 }
 
-static void PS2_TEST(SPI_HandleTypeDef *hspi)
+void PS2_Init(PS2ControllerHandler *ps2)
 {
-  uint8_t temp = 0b00000001;
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
-
-  // 0x01
-  // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[0], 1, 10);
-
-  HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-  PS2DataIn[0] = SPI2->DR;
-
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-  delay_2_25us(1);
-
-  temp = 0b01000010;
-
-  // 0x42
-  // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[1], 1, 10);
-
-  HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-  PS2DataIn[1] = SPI2->DR;
-
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-  delay_2_25us(1);
-
-  // 0x00 7 times---------------------------
-  temp = 0x00;
-  for (uint8_t i = 0; i < 7; i++)
-  {
-    // HAL_SPI_TransmitReceive(&hspi2, &temp, (uint8_t *)PS2DataIn[i + 2], 1, 10);
-
-    HAL_SPI_Transmit(&hspi2, &temp, 1, 10);
-    PS2DataIn[i + 2] = SPI2->DR;
-
-    HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(SPI1_SC_GPIO, SPI1_SC_PIN, GPIO_PIN_SET);
-    delay_2_25us(1);
-  }
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
-  delay_2_25us(14);
-}
-
-void delay_2_25us(uint16_t us)
-{
-  TIM1->CNT = 0;
-  TIM1->CR1 |= TIM_CR1_CEN;
-  while (TIM1->CNT < us)
-    ;
-  TIM1->CR1 |= TIM_CR1_CEN;
+  ps2->GPIO = GPIO_PIN_12;
+  ps2->PIN = GPIOB;
+  ps2->spi = &hspi2;
+  ps2->tim = &htim1;
+  ps2->tim->Instance->CNT = 0;
+  ps2->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
 
 /* USER CODE END 4 */
