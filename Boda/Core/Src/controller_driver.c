@@ -1,10 +1,11 @@
 #include "controller_driver.h"
 
-//Called before button/joystick check to get latest inputs
+// Called before button/joystick check to get latest inputs
 void PS2_Update(PS2ControllerHandler *ps2i)
 {
     // wait time until data will be ready on the controller
-    if(ps2i->tim->Instance->CNT < 10){
+    if (ps2i->tim->Instance->CNT < 14)
+    { // TODO: replace with delayed thread
         return;
     }
     uint8_t temp = 0b00000001;
@@ -22,7 +23,7 @@ void PS2_Update(PS2ControllerHandler *ps2i)
     // Send Command: 0x42
     temp = 0b01000010;
     HAL_SPI_Transmit(ps2i->spi, &temp, 1, 10);
-    // Trigger Achnowledge
+    // Trigger Acknowledge
     HAL_GPIO_WritePin(ps2i->GPIO, ps2i->PIN, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(ps2i->GPIO, ps2i->PIN, GPIO_PIN_SET);
     delay_2_25us(ps2i->tim, 1);
@@ -45,32 +46,41 @@ void PS2_Update(PS2ControllerHandler *ps2i)
     ps2i->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
 
-bool Is_Button_Pressed(PS2ControllerHandler *ps2i, uint8_t button){
+bool Is_Button_Pressed(PS2ControllerHandler *ps2i, uint8_t button)
+{
     uint8_t temp = ps2i->PS2Data[BUTTON_INDEX];
     temp |= button;
-    if(temp == button){
+    if (temp == button)
+    {
         return true;
     }
-    else{
+    else
+    {
         return false;
     }
 }
 
-bool Is_DPad_Pressed(PS2ControllerHandler *ps2i, uint8_t button){
+bool Is_DPad_Pressed(PS2ControllerHandler *ps2i, uint8_t button)
+{
     uint8_t temp = ps2i->PS2Data[DPAD_INDEX];
     temp |= button;
-    if(temp == button){
+    if (temp == button)
+    {
         return true;
     }
-    else{
+    else
+    {
         return false;
     }
 }
 
-uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction){
-    if(direction == 3 || direction == 4){
+uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
+{
+    if (direction == 3 || direction == 4)
+    {
         uint8_t temp = ps2i->PS2Data[direction];
-        if(temp < 0x50 || temp > 0x90){
+        if (temp < 0x50 || temp > 0x90)
+        {
             return temp;
         }
         return NEUTRAL;
@@ -78,10 +88,13 @@ uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction){
     return NEUTRAL;
 }
 
-uint8_t Is_Joystick_Left_Moved(PS2ControllerHandler *ps2i, uint8_t direction){
-    if(direction == 5 || direction == 6){
+uint8_t Is_Joystick_Left_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
+{
+    if (direction == 5 || direction == 6)
+    {
         uint8_t temp = ps2i->PS2Data[direction];
-        if(temp < 0x50 || temp > 0xA0){
+        if (temp < 0x50 || temp > 0xA0)
+        {
             return temp;
         }
         return NEUTRAL;
