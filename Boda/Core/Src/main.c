@@ -553,7 +553,6 @@ void PS2_Init(PS2ControllerHandler *ps2)
   ps2->tim->Instance->CNT = 0;
   ps2->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
-
 /* USER CODE END 4 */
 
 /**
