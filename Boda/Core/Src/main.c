@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "string.h"
+#include "controller_driver.h"
 #include "A4988.c"
 
 /* USER CODE END Includes */
@@ -36,8 +37,6 @@ typedef int bool; // Define a custom boolean type
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SPI1_SC_PIN GPIO_PIN_12
-#define SPI1_SC_GPIO GPIOB
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,6 +59,8 @@ stepper *motor2 = NULL;
 stepper *motor3 = NULL;
 stepper *motor4 = NULL;
 
+PS2ControllerHandler ps2;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,13 +71,10 @@ static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-static void PS2_TEST(SPI_HandleTypeDef *hspi);
-static void delay_2_25us(uint16_t us);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t *PS2DataIn[9];
 /* USER CODE END 0 */
 
 /**
@@ -132,7 +130,7 @@ int main(void)
   float rpm = 300;
   short microsteps = FULL_STEPS;
   double deg = 10;
-  const short spr = 200;  // Steps per revolution 
+  const short spr = 200;  // Steps per revolution
 
   stepper stepper_motor_1;
   motor1 = &stepper_motor_1;
