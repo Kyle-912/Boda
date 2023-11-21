@@ -3,27 +3,27 @@
 #ifndef PS2_CONTROLLER_H
 #define PS2_CONTROLLER_H
 
-#define DPAD_INDEX   1
+#define DPAD_INDEX 1
 #define BUTTON_INDEX 2
 #define JOYSTICK_R_RL 3
 #define JOYSTICK_R_UD 4
 #define JOYSTICK_L_RL 5
 #define JOYSTICK_L_UD 6
 
-#define X        0xBF
-#define CIRCLE   0xDF
+#define X 0xBF
+#define CIRCLE 0xDF
 #define TRIANGLE 0xEF
-#define SQUARE   0x7F
+#define SQUARE 0x7F
 
 #define R1 0xF7
 #define R2 0xFD
 #define L1 0xFB
 #define L2 0xFE
 
-#define DRIGHT  0xDF
-#define DUP     0xEF
-#define DDOWN   0xBF
-#define DLEFT   0x7F
+#define DRIGHT 0xDF
+#define DUP 0xEF
+#define DDOWN 0xBF
+#define DLEFT 0x7F
 
 #define NEUTRAL 0x45
 
@@ -31,12 +31,13 @@ typedef int bool; // Define a custom boolean type
 #define true 1    // Define true as 1
 #define false 0   // Define false as 0
 
-typedef struct {
+typedef struct
+{
     short unsigned int GPIO;
     uint16_t PIN;
     SPI_HandleTypeDef *spi;
     TIM_HandleTypeDef *tim;
-    uint8_t* PS2Data [7];
+    uint8_t *PS2Data[7];
 } PS2ControllerHandler;
 
 void PS2_Update(PS2ControllerHandler *ps2i);

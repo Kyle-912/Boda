@@ -1,6 +1,10 @@
 {
     "cSpell.ignoreWords": [
         "AHBCLK",
+        "DDOWN",
+        "DLEFT",
+        "DPAD",
+        "DRIGHT",
         "GPIOA",
         "GPIOB",
         "GPIOC",
@@ -9,6 +13,7 @@
         "HCLK",
         "HSICALIBRATION",
         "HWCONTROL",
+        "NVIC",
         "PLLM",
         "PLLN",
         "PLLP",
