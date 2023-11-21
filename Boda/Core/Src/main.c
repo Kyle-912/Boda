@@ -162,15 +162,19 @@ int main(void)
   {
     PS2_Update(&ps2);
 
-    // if the button is x
     if (Is_Button_Pressed(&ps2, X))
     {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageX), 100);
+      HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
       toggle1 = true;
     }
     else
     {
       toggle1 = false;
+    }
+
+    if (toggle1 && !motor1->steps_remaining)
+    {
+      move_stepper_deg(motor1, deg);
     }
 
     if (Is_Button_Pressed(&ps2, CIRCLE))
@@ -182,15 +186,6 @@ int main(void)
     {
       toggle2 = false;
     }
-
-    if (toggle1 && !motor1->steps_remaining)
-    {
-      move_stepper_deg(motor1, deg);
-    }
-
-    // move_stepper_deg(motor1, deg);
-    // move_stepper_deg(motor2, deg);
-    // HAL_Delay(5000);
 
     if (toggle2 && !motor2->steps_remaining)
     {
