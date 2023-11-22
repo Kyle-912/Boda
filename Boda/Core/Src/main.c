@@ -41,6 +41,11 @@ typedef int bool; // Define a custom boolean type
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define map_range(value, in_min, in_max, out_min, out_max) \
+    (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
+
+#define low_rpm 50
+#define high_rpm 300
 
 /* USER CODE END PM */
 
@@ -158,13 +163,31 @@ int main(void)
   set_timer(motor2, &htim14);
   set_rpm(motor2, rpm);
 
+  double mapped_left = 0;
+  double mapped_up = 0;
+
   while (1)
   {
     PS2_Update(&ps2);
 
+    uint8_t left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+    uint8_t up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+
+
     // if the button is x
-    if (Is_Button_Pressed(&ps2, X))
+    if (left_val != NEUTRAL)
     {
+      if (left_val < NEUTRAL)
+      {
+        set_dir_state(motor1, 1);
+        mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
+      }
+      else 
+      {
+        set_dir_state(motor1, 0);
+        mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
+      }
+      set_rpm(motor1, mapped_left);
       HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageX), 100);
       toggle1 = true;
     }
@@ -173,8 +196,19 @@ int main(void)
       toggle1 = false;
     }
 
-    if (Is_Button_Pressed(&ps2, CIRCLE))
+    if (up_val != NEUTRAL)
     {
+      if (up_val < NEUTRAL)
+      {
+        set_dir_state(motor2, 1);
+        mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
+      }
+      else 
+      {
+        set_dir_state(motor2, 0);
+        mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
+      }
+      set_rpm(motor2, mapped_up);
       HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
       toggle2 = true;
     }
