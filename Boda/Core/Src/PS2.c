@@ -4,7 +4,7 @@
 void PS2_Update(PS2ControllerHandler *ps2i)
 {
     // wait time until data will be ready on the controller
-    if (ps2i->tim->Instance->CNT < 14)
+    if (ps2i->tim->Instance->CNT < 50)
     { // TODO: replace with delayed thread
         return;
     }

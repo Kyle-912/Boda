@@ -541,10 +541,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void PS2_Init(PS2ControllerHandler *ps2)
 {
-  ps2->GPIO = GPIO_PIN_12;
-  ps2->PIN = GPIOB;
+  ps2->GPIO = GPIOB;
+  ps2->PIN = GPIO_PIN_12;
   ps2->spi = &hspi2;
   ps2->tim = &htim1;
+  HAL_GPIO_WritePin(ps2->GPIO, ps2->PIN, GPIO_PIN_SET);
   ps2->tim->Instance->CNT = 0;
   ps2->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
