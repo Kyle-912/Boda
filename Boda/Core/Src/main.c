@@ -30,6 +30,23 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+// Motor 1 - Using dir=PA10, step=PB8, sleep=PB5
+#define motor1_dir_port GPIOA
+#define motor1_dir_pin GPIO_PIN_10
+#define motor1_step_port GPIOB
+#define motor1_step_pin GPIO_PIN_8
+#define motor1_sleep_port GPIOB
+#define motor1_sleep_pin GPIO_PIN_5
+
+// Motor 2 - Using dir=PA9, step=PA8, sleep=PB4
+#define motor2_dir_port GPIOA
+#define motor2_dir_pin GPIO_PIN_9
+#define motor2_step_port GPIOA
+#define motor2_step_pin GPIO_PIN_8
+#define motor2_sleep_port GPIOB
+#define motor2_sleep_pin GPIO_PIN_4
+
 typedef int bool; // Define a custom boolean type
 #define true 1    // Define true as 1
 #define false 0   // Define false as 0
@@ -143,22 +160,24 @@ int main(void)
   double deg = 20;
   const short spr = 200; // Steps per revolution
 
+  // Motor 1 
   stepper stepper_motor_1;
   motor1 = &stepper_motor_1;
   init_stepper(motor1, spr);
-  init_dir_pin(motor1, GPIOA, GPIO_PIN_10);
-  init_step_pin(motor1, GPIOB, GPIO_PIN_8);
-  init_sleep_pin(motor1, GPIOB, GPIO_PIN_5);
+  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
+  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
+  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
   set_micro_en(motor1, 0);
   set_timer(motor1, &htim3);
   set_rpm(motor1, rpm);
 
+  // Motor 2 
   stepper stepper_motor_2;
   motor2 = &stepper_motor_2;
   init_stepper(motor2, spr);
-  init_dir_pin(motor2, GPIOA, GPIO_PIN_9);
-  init_step_pin(motor2, GPIOA, GPIO_PIN_8);
-  init_sleep_pin(motor2, GPIOB, GPIO_PIN_4);
+  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
+  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
+  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
   set_micro_en(motor2, 0);
   set_timer(motor2, &htim14);
   set_rpm(motor2, rpm);
