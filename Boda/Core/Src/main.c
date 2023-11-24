@@ -549,49 +549,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void pulse_stepper(stepper *motor)
-{
-  // IF no more steps remaining in move:
-  if (motor->steps_remaining <= 0)
-  {
-    // reset step pin (don't keep step pin high)
-    HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-    // STOP timer
-    HAL_TIM_Base_Stop_IT(motor->timer);
-  }
-  else
-  {
-    // Read current step pin state
-    GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor->step_port, motor->step_pin);
-
-    // IF pin state is set: reset the pin and wait step_pulse
-    if (currentPinState == GPIO_PIN_SET)
-    {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
-    }
-    // ELSE: set the pin for 20 us
-    // We should pull HIGH for at least 1-2us (step_high_min)
-    else
-    {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
-
-      // Dec steps remaining in current move
-      motor->steps_remaining--;
-
-      // Inc/Dec the stepper position
-      if (!motor->dir_state) // 0 = clockwise?
-        motor->step_count++;
-      else // 1 = counter-clockwise?
-        motor->step_count--;
-
-    }
-    // RESET timer
-    __HAL_TIM_SET_COUNTER(motor->timer, 0);
-  }
-}
-
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {

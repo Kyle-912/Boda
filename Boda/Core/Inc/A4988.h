@@ -60,5 +60,6 @@ void set_dir_state(stepper *motor, short dir_state);
 uint8_t setMicrostep(stepper *motor);
 long calcStepsForRotation(stepper *motor, double deg);
 void move_stepper_deg(stepper *motor, double deg);
+void pulse_stepper(stepper *motor);
 
 #endif // A4988_H
