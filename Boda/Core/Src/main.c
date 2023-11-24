@@ -551,27 +551,43 @@ static void MX_GPIO_Init(void)
 
 void pulse_stepper(stepper *motor)
 {
-  // motor1->steps_remaining--;
+  // IF no more steps remaining in move:
   if (motor->steps_remaining <= 0)
   {
+    // reset step pin (don't keep step pin high)
     HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+    // STOP timer
     HAL_TIM_Base_Stop_IT(motor->timer);
   }
-  // We should pull HIGH for at least 1-2us (step_high_min)
   else
   {
+    // Read current step pin state
     GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor->step_port, motor->step_pin);
+
+    // IF pin state is set: reset the pin and wait step_pulse
     if (currentPinState == GPIO_PIN_SET)
     {
       HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
       __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
     }
+    // ELSE: set the pin for 20 us
+    // We should pull HIGH for at least 1-2us (step_high_min)
     else
     {
       HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
       __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
+
+      // Dec steps remaining in current move
       motor->steps_remaining--;
+
+      // Inc/Dec the stepper position
+      if (!motor->dir_state) // 0 = clockwise?
+        motor->step_count++;
+      else // 1 = counter-clockwise?
+        motor->step_count--;
+
     }
+    // RESET timer
     __HAL_TIM_SET_COUNTER(motor->timer, 0);
   }
 }
@@ -579,22 +595,11 @@ void pulse_stepper(stepper *motor)
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if (htim->Instance == motor1->timer->Instance)
-  {
-    pulse_stepper(motor1);
-  }
-  if (htim->Instance == motor2->timer->Instance)
-  {
-    pulse_stepper(motor2);
-  }
-  if (htim->Instance == motor3->timer->Instance)
-  {
-    pulse_stepper(motor3);
-  }
-  if (htim->Instance == motor4->timer->Instance)
-  {
-    pulse_stepper(motor4);
-  }
+  // Check if the timer that elapsed is from motor1-motor4
+  if (htim->Instance == motor1->timer->Instance) pulse_stepper(motor1);
+  else if (htim->Instance == motor2->timer->Instance) pulse_stepper(motor2);
+  else if (htim->Instance == motor3->timer->Instance) pulse_stepper(motor3);
+  else if (htim->Instance == motor4->timer->Instance) pulse_stepper(motor4);
 }
 
 void PS2_Init(PS2ControllerHandler *ps2)
