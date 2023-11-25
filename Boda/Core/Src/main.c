@@ -61,34 +61,30 @@ UART_HandleTypeDef huart2;
 /* Definitions for PS2DataUpdate */
 osThreadId_t PS2DataUpdateHandle;
 const osThreadAttr_t PS2DataUpdate_attributes = {
-    .name = "PS2DataUpdate",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "PS2DataUpdate",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for StepperMotor1 */
 osThreadId_t StepperMotor1Handle;
 const osThreadAttr_t StepperMotor1_attributes = {
-    .name = "StepperMotor1",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "StepperMotor1",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for StepperMotor2 */
 osThreadId_t StepperMotor2Handle;
 const osThreadAttr_t StepperMotor2_attributes = {
-    .name = "StepperMotor2",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "StepperMotor2",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for mPS2Data */
 osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
-    .name = "mPS2Data"};
+  .name = "mPS2Data"
+};
 /* USER CODE BEGIN PV */
-
-stepper *motor1 = NULL;
-stepper *motor2 = NULL;
-stepper *motor3 = NULL;
-stepper *motor4 = NULL;
 
 /* USER CODE END PV */
 
@@ -107,11 +103,18 @@ void StartStepperMotor2(void *argument);
 /* USER CODE BEGIN PFP */
 
 void PS2_Init(PS2ControllerHandler *ps2);
+
 PS2ControllerHandler ps2;
+
 float rpm = 300;
 short microsteps = FULL_STEPS;
 double deg = 20;
 const short spr = 200; // Steps per revolution
+
+stepper* motor1 = NULL;
+stepper* motor2 = NULL;
+stepper* motor3 = NULL;
+stepper* motor4 = NULL;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -119,9 +122,9 @@ const short spr = 200; // Steps per revolution
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -212,29 +215,29 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -251,8 +254,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -265,10 +269,10 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief SPI2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI2_Init(void)
 {
 
@@ -299,13 +303,14 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+
 }
 
 /**
- * @brief TIM1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM1_Init(void)
 {
 
@@ -320,7 +325,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 72 - 1;
+  htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -344,13 +349,14 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+
 }
 
 /**
- * @brief TIM3 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM3_Init(void)
 {
 
@@ -388,13 +394,14 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
 }
 
 /**
- * @brief TIM14 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM14_Init(void)
 {
 
@@ -418,13 +425,14 @@ static void MX_TIM14_Init(void)
   /* USER CODE BEGIN TIM14_Init 2 */
 
   /* USER CODE END TIM14_Init 2 */
+
 }
 
 /**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -450,18 +458,19 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -470,10 +479,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
@@ -485,14 +494,14 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD2_Pin PA8 PA9 PA10 */
-  GPIO_InitStruct.Pin = LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
+  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PB12 PB4 PB5 PB8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8;
+  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -505,8 +514,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -604,19 +613,22 @@ void StartPS2DataUpdate(void *argument)
 void StartStepperMotor1(void *argument)
 {
   /* USER CODE BEGIN StartStepperMotor1 */
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor1 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_10);
+  init_step_pin(&stepper_motor, GPIOB, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_5);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim3);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
   char *messageR = "Stick Moved Right\r\n";
   char *messageL = "Stick Moved Left\r\n";
-  stepper stepper_motor_1;
-  motor1 = &stepper_motor_1;
-  init_stepper(motor1, spr);
-  init_dir_pin(motor1, GPIOA, GPIO_PIN_10);
-  init_step_pin(motor1, GPIOB, GPIO_PIN_8);
-  init_sleep_pin(motor1, GPIOB, GPIO_PIN_5);
-  set_micro_en(motor1, 0);
-  set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
-
-  bool toggle1 = true;
+  bool toggle = false;
   double mapped_left = 0;
   uint8_t left_val;
 
@@ -633,28 +645,28 @@ void StartStepperMotor1(void *argument)
     {
       if (left_val < NEUTRAL)
       {
-        set_dir_state(motor1, 1);
+        set_dir_state(&stepper_motor, 1);
         mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
       }
       else
       {
-        set_dir_state(motor1, 0);
+        set_dir_state(&stepper_motor, 0);
         mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
       }
-      set_rpm(motor1, mapped_left);
-      toggle1 = true;
+      set_rpm(&stepper_motor, mapped_left);
+      toggle = true;
     }
     else
     {
-      toggle1 = false;
+      toggle = false;
     }
 
     //If the joystick is moved move the motor
-    if (toggle1 && !motor1->steps_remaining)
+    if (toggle && !stepper_motor.steps_remaining)
     {
-      move_stepper_deg(motor1, deg);
+      move_stepper_deg(&stepper_motor, deg);
     }
 
     // Return the PS2Data Mutex
@@ -674,53 +686,60 @@ void StartStepperMotor1(void *argument)
 void StartStepperMotor2(void *argument)
 {
   /* USER CODE BEGIN StartStepperMotor2 */
-  /* Infinite loop */
-  stepper stepper_motor_2;
-  motor2 = &stepper_motor_2;
-  init_stepper(motor2, spr);
-  init_dir_pin(motor2, GPIOA, GPIO_PIN_9);
-  init_step_pin(motor2, GPIOA, GPIO_PIN_8);
-  init_sleep_pin(motor2, GPIOB, GPIO_PIN_4);
-  set_micro_en(motor2, 0);
-  set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor2 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_9);
+  init_step_pin(&stepper_motor, GPIOA, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_4);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim14);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
   char *messageU = "Stick Moved Up\r\n";
   char *messageD = "Stick Moved Down\r\n";
-  bool toggle2 = true;
+  bool toggle = false;
   uint8_t up_val;
   double mapped_up = 0;
 
+  /* Infinite loop */
   for (;;)
   {
     //Get the PS2Data Mutex
     osMutexWait(mPS2DataHandle, 10);
+
+    //get the current value of the joystick up down
     up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+
     if (up_val != NEUTRAL)
     {
       if (up_val < NEUTRAL)
       {
-        set_dir_state(motor2, 1);
+        set_dir_state(&stepper_motor, 1);
         mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
       HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
       }
       else
       {
-        set_dir_state(motor2, 0);
+        set_dir_state(&stepper_motor, 0);
         mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
       HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
       }
-      set_rpm(motor2, mapped_up);
-      toggle2 = true;
+      set_rpm(&stepper_motor, mapped_up);
+      toggle = true;
     }
     else
     {
-      toggle2 = false;
+      toggle = false;
     }
 
     //If the joystick is moved move the motor
-    if (toggle2 && !motor2->steps_remaining)
+    if (toggle && !stepper_motor.steps_remaining)
     {
-      move_stepper_deg(motor2, deg);
+      move_stepper_deg(&stepper_motor, deg);
     }
 
     osMutexRelease(mPS2DataHandle);
@@ -730,9 +749,9 @@ void StartStepperMotor2(void *argument)
 }
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -744,14 +763,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
