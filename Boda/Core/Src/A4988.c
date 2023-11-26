@@ -108,9 +108,9 @@ void set_micro_en(stepper *motor, uint8_t micro_en) {
 }
 
 // set dir state (clockwise/counter-clockwise)
-void home(stepper *motor) {
-    motor->step_count = 0;
-}
+// void home(stepper *motor) {
+//     motor->step_count = 0;
+// }
 
 uint8_t setMicrostep(stepper *motor) {
     int i = 0;
@@ -141,6 +141,46 @@ long calcStepsForRotation(stepper *motor, double deg)
     return deg * motor->steps * motor->microsteps / 360;
 }
 
+void move_stepper_steps(stepper *motor, int16_t steps, float rpm)
+{
+    // if negative steps, set dir
+    if (steps < 0)
+    {
+        motor->dir_state = 1;
+        steps = steps * -1;
+    }
+    // set steps
+    motor->steps_remaining = steps;
+    motor->step_count = 0;
+
+    // set rpm
+    motor->rpm = rpm;
+    motor->step_pulse = STEP_PULSE(motor->steps, motor->microsteps, rpm);
+
+    // Set step output LOW
+    HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+
+    // Set sleep output HIGH
+    HAL_GPIO_WritePin(motor->sleep_port, motor->sleep_pin, SET);
+
+    // Output DIR state
+    HAL_GPIO_WritePin(motor->dir_port, motor->dir_pin, motor->dir_state);
+
+    // Set the new pulse
+    motor->timer->Instance->ARR = motor->step_pulse;
+    if (HAL_TIM_Base_Init(motor->timer) != HAL_OK)
+    {
+        // Handle potential error
+    }
+
+    // Set timer to 0
+    __HAL_TIM_SET_COUNTER(motor->timer, 0);
+
+    // Start timer
+    HAL_TIM_Base_Start_IT(motor->timer);
+
+}
+
 void move_stepper_deg(stepper *motor, double deg) {
 
     if (motor->enable_microsteps){
@@ -150,11 +190,6 @@ void move_stepper_deg(stepper *motor, double deg) {
             return;
         }
     }
-    // if (setMicrostep(motor) == -1)
-    // {
-    //     // Error in setting microsteps
-    //     return;
-    // }
 
     // First attempt at opposite rotation
     if (deg < 0)
@@ -192,6 +227,7 @@ void move_stepper_deg(stepper *motor, double deg) {
     // Handler will take care of the rest
 }
 
+
 void pulse_stepper(stepper *motor)
 {
   // IF no more steps remaining in move:
@@ -220,10 +256,10 @@ void pulse_stepper(stepper *motor)
         // Check if within bounds of motor
         //--------------------------------
         // 1. if 0 and trying to decrease
-        if (motor->step_count == 0 && motor->dir_state) 
+        if (motor->step_count <= 0 && motor->dir_state) 
             return;
         // 2. if 360 and trying to increase
-        else if (motor->step_count == MAX_DEGREES && !motor->dir_state)
+        else if (motor->step_count >= MAX_DEGREES && !motor->dir_state)
             return;
         //--------------------------------
 

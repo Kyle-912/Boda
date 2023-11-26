@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "main.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "controller_driver.h": "c"
     }
 }

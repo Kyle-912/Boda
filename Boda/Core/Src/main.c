@@ -24,7 +24,8 @@
 
 #include "string.h"
 #include "controller_driver.h"
-#include "A4988.c"
+#include "A4988.h"
+#include "robot_arm.h"
 
 /* USER CODE END Includes */
 
@@ -155,7 +156,7 @@ int main(void)
   bool toggle1 = true;
   bool toggle2 = true;
 
-  float rpm = 300;
+  float rpm = 200;
   short microsteps = FULL_STEPS;
   double deg = 20;
   const short spr = 200; // Steps per revolution
@@ -185,70 +186,97 @@ int main(void)
   double mapped_left = 0;
   double mapped_up = 0;
 
+  arm robot_arm_var;
+  arm* robot_arm = &robot_arm_var;
+  init_arm(robot_arm, 200.0f, motor1, motor2);
+  home(robot_arm);
+  set_coordinate(robot_arm, 0, 20, 20);
+  set_coordinate(robot_arm, 1, 100, 25);
+  uint8_t coord = 0;
+
   while (1)
   {
-    PS2_Update(&ps2);
+    // if (coord == 0)
+    // {
+    //   move(robot_arm, 1);
+    //   coord = 1;
+    // }
+    // else 
+    // {
+    //   move(robot_arm, 0);
+    //   coord = 0;
+    // }
 
-    uint8_t left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
-    uint8_t up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+    // move_stepper_steps(motor1, 100, 200);
+    // move_stepper_steps(motor2, 100, 200);
+
+    move_stepper_deg(motor1, 185);
+    move_stepper_deg(motor2, 185);
+
+    HAL_Delay(1000);
 
 
-    // if the button is x
-    if (left_val != NEUTRAL)
-    {
-      if (left_val < NEUTRAL)
-      {
-        set_dir_state(motor1, 1);
-        mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
-      }
-      else 
-      {
-        set_dir_state(motor1, 0);
-        mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
-      }
-      set_rpm(motor1, mapped_left);
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageX), 100);
-      toggle1 = true;
-    }
-    else
-    {
-      toggle1 = false;
-    }
+    // PS2_Update(&ps2);
 
-    if (up_val != NEUTRAL)
-    {
-      if (up_val < NEUTRAL)
-      {
-        set_dir_state(motor2, 1);
-        mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
-      }
-      else 
-      {
-        set_dir_state(motor2, 0);
-        mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
-      }
-      set_rpm(motor2, mapped_up);
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
-      toggle2 = true;
-    }
-    else
-    {
-      toggle2 = false;
-    }
+    // uint8_t left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+    // uint8_t up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
 
-    if (toggle1 && !motor1->steps_remaining)
-    {
-      move_stepper_deg(motor1, deg);
-    }
 
-    // move_stepper_deg(motor1, deg);
-    // move_stepper_deg(motor2, deg);
-    // HAL_Delay(5000);
+    // if (left_val != NEUTRAL)
+    // {
+    //   if (left_val < NEUTRAL)
+    //   {
+    //     set_dir_state(motor1, 1);
+    //     mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
+    //   }
+    //   else 
+    //   {
+    //     set_dir_state(motor1, 0);
+    //     mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
+    //   }
+    //   set_rpm(motor1, mapped_left);
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageX), 100);
+    //   toggle1 = true;
+    // }
+    // else
+    // {
+    //   toggle1 = false;
+    // }
 
-    if (toggle2 && !motor2->steps_remaining)
-    {
-      move_stepper_deg(motor2, deg);
-    }
+    // if (up_val != NEUTRAL)
+    // {
+    //   if (up_val < NEUTRAL)
+    //   {
+    //     set_dir_state(motor2, 1);
+    //     mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
+    //   }
+    //   else 
+    //   {
+    //     set_dir_state(motor2, 0);
+    //     mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
+    //   }
+    //   set_rpm(motor2, mapped_up);
+    //   HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
+    //   toggle2 = true;
+    // }
+    // else
+    // {
+    //   toggle2 = false;
+    // }
+
+    // if (toggle1 && !motor1->steps_remaining)
+    // {
+    //   move_stepper_deg(motor1, deg);
+    // }
+
+    // // move_stepper_deg(motor1, deg);
+    // // move_stepper_deg(motor2, deg);
+    // // HAL_Delay(5000);
+
+    // if (toggle2 && !motor2->steps_remaining)
+    // {
+    //   move_stepper_deg(motor2, deg);
+    // }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
