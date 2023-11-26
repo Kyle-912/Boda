@@ -25,6 +25,11 @@
 #define DDOWN 0xBF
 #define DLEFT 0x7F
 
+#define START 0xF7
+#define SELECT 0xFE
+#define L3 0xFD
+#define R3 0xFB
+
 #define NEUTRAL 0x7F
 #define DEADZONE_HI 0x9F
 #define DEADZONE_LO 0x5F
