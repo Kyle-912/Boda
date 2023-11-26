@@ -25,7 +25,7 @@
 
 #include "string.h"
 #include "PS2.h"
-#include "A4988.c"
+#include "A4988.h"
 
 /* USER CODE END Includes */
 
@@ -229,10 +229,10 @@ int main(void)
   StepperMotor2Handle = osThreadNew(StartStepperMotor2, NULL, &StepperMotor2_attributes);
 
   /* creation of StepperMotor3 */
-  StepperMotor3Handle = osThreadNew(StartStepperMotor3, NULL, &StepperMotor3_attributes);
+  // StepperMotor3Handle = osThreadNew(StartStepperMotor3, NULL, &StepperMotor3_attributes);
 
   /* creation of StepperMotor4 */
-  StepperMotor4Handle = osThreadNew(StartStepperMotor4, NULL, &StepperMotor4_attributes);
+  // StepperMotor4Handle = osThreadNew(StartStepperMotor4, NULL, &StepperMotor4_attributes);
 
   /* creation of AttachmentTest */
   AttachmentTestHandle = osThreadNew(StartAttachmentTest, NULL, &AttachmentTest_attributes);
@@ -785,13 +785,13 @@ void StartStepperMotor2(void *argument)
       {
         set_dir_state(&stepper_motor, 1);
         mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
+        // HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
         mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
+        // HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
       }
       set_rpm(&stepper_motor, mapped_up);
       toggle = true;
