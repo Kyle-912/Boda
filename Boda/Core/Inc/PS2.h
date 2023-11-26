@@ -40,7 +40,7 @@ typedef int bool; // Define a custom boolean type
 
 typedef struct
 {
-    GPIO_TypeDef* GPIO;
+    GPIO_TypeDef *GPIO;
     uint16_t PIN;
     SPI_HandleTypeDef *spi;
     TIM_HandleTypeDef *tim;

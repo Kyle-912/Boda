@@ -1,6 +1,6 @@
 #include "robot_arm.h"
 
-void init_arm(arm* arm, float rpm_, stepper *motor1, stepper *motor2)
+void init_arm(arm *arm, float rpm_, stepper *motor1, stepper *motor2)
 {
     arm->motors[0] = motor1;
     arm->motors[1] = motor2;
@@ -22,7 +22,7 @@ void init_arm(arm* arm, float rpm_, stepper *motor1, stepper *motor2)
 //     // float i_time = 0;
 //     // for (int i = 0; i < MAX_MOTORS; i++)
 //     // {
-//     //     i_time = 
+//     //     i_time =
 //     //     if ()
 //     // }
 
@@ -33,18 +33,18 @@ void init_arm(arm* arm, float rpm_, stepper *motor1, stepper *motor2)
 //     {
 //         return time1;
 //     }
-//     else 
+//     else
 //     {
 //         return time2;
 //     }
 // }
 
-void adjust_motors(float rpm, arm* arm, uint8_t coord)
+void adjust_motors(float rpm, arm *arm, uint8_t coord)
 {
     // uint16_t deltas[MAX_MOTORS];
     // deltas[0] = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
     // deltas[1] = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
-    asm ("nop");
+    asm("nop");
     int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
     int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
 
@@ -77,7 +77,7 @@ void adjust_motors(float rpm, arm* arm, uint8_t coord)
 
     if (time1 > time2)
         longest_time = time1;
-    else 
+    else
         longest_time = time2;
 
     float rpm_bottom = (longest_time * 360 / 60);
@@ -102,11 +102,10 @@ void adjust_motors(float rpm, arm* arm, uint8_t coord)
 //     // float i_time = 0;
 //     // for (int i = 0; i < MAX_MOTORS; i++)
 //     // {
-//     //     delta_steps = arm->coordinates[coord].m1 - 
+//     //     delta_steps = arm->coordinates[coord].m1 -
 //     //     i_time = (arm->coordinates[i])
 //     //     if ()
 //     // }
-
 
 //     int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
 //     int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
@@ -129,7 +128,7 @@ void adjust_motors(float rpm, arm* arm, uint8_t coord)
 //     {
 //         return time1;
 //     }
-//     else 
+//     else
 //     {
 //         return time2;
 //     }
@@ -141,13 +140,13 @@ void adjust_motors(float rpm, arm* arm, uint8_t coord)
 //     arm->motors[1]->rpm = deg2 / (new_time * 360 / 60);
 // }
 
-void home(arm* arm)
+void home(arm *arm)
 {
     arm->motors[0]->step_count = 0;
     arm->motors[1]->step_count = 0;
 }
 
-void save_coordinate(arm* arm)
+void save_coordinate(arm *arm)
 {
     if (arm->num_coords < MAX_COORDINATES)
     {
@@ -157,7 +156,7 @@ void save_coordinate(arm* arm)
     }
 }
 
-void set_coordinate(arm* arm, uint8_t coord_index, uint16_t step1, uint16_t step2)
+void set_coordinate(arm *arm, uint8_t coord_index, uint16_t step1, uint16_t step2)
 {
     if (coord_index < MAX_COORDINATES)
     {
@@ -166,7 +165,7 @@ void set_coordinate(arm* arm, uint8_t coord_index, uint16_t step1, uint16_t step
     }
 }
 
-void del_coordinate(arm* arm)
+void del_coordinate(arm *arm)
 {
     if (arm->num_coords > 0)
     {
@@ -176,8 +175,8 @@ void del_coordinate(arm* arm)
     }
 }
 
-void move(arm* arm, uint8_t to_coord)
-{   
+void move(arm *arm, uint8_t to_coord)
+{
     adjust_motors(arm->rpm, arm, to_coord);
 
     // reset rpms
