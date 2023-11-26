@@ -4,8 +4,8 @@
         {
                  "name": "Cortex Debug",
             "cwd": "${workspaceFolder}",
-            //"executable": "./Boda/build/Boda.elf",
-            "executable": "./AttachmentTesting/build/AttachmentTesting.elf",
+            "executable": "./Boda/build/Boda.elf",
+            //"executable": "./AttachmentTesting/build/AttachmentTesting.elf",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",
