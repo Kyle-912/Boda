@@ -3,12 +3,8 @@
 // Called before button/joystick check to get latest inputs
 void PS2_Update(PS2ControllerHandler *ps2i)
 {
-    // wait time until data will be ready on the controller
-    if (ps2i->tim->Instance->CNT < 50)
-    { // TODO: replace with delayed thread
-        return;
-    }
     uint8_t temp = 0b00000001;
+
     // set chip select low
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_RESET);
 
@@ -40,10 +36,6 @@ void PS2_Update(PS2ControllerHandler *ps2i)
     }
     // Set Chip Select High
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8, GPIO_PIN_SET);
-
-    // start a timer to count until the next set of data will be ready on the controller
-    ps2i->tim->Instance->CNT = 0;
-    ps2i->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
 
 bool Is_Button_Pressed(PS2ControllerHandler *ps2i, uint8_t button)
@@ -76,10 +68,11 @@ bool Is_DPad_Pressed(PS2ControllerHandler *ps2i, uint8_t button)
 
 uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 {
+    //If the direction isnt for the Right Joystick LR or UD then exit
     if (direction == 3 || direction == 4)
     {
         uint8_t temp = ps2i->PS2Data[direction];
-        if (temp < 0x50 || temp > 0x90)
+        if (temp < DEADZONE_LO || temp > DEADZONE_HI)
         {
             return temp;
         }
@@ -90,10 +83,11 @@ uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 
 uint8_t Is_Joystick_Left_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 {
+    //If the direction isnt for the Left Joystick LR or UD then exit
     if (direction == 5 || direction == 6)
     {
         uint8_t temp = ps2i->PS2Data[direction];
-        if (temp < 0x50 || temp > 0xA0)
+        if (temp < DEADZONE_LO || temp > DEADZONE_HI)
         {
             return temp;
         }
@@ -101,19 +95,6 @@ uint8_t Is_Joystick_Left_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
     }
     return NEUTRAL;
 }
-/*
-POSSIBLE FUNCTION TO CHECK MULTIPLE BUTTONS AT THE SAME TIME
-bool* Is_Button_Pressed(uint8_t* button, bool* store){
-    for (int i = 0; i < sizeof(button) / sizeof(button[i]); i++){
-        if (button is pressed){
-            store[i] = true;
-        }
-        else{
-            store[i] = false;
-        }
-    }
-}
-*/
 
 void delay_2_25us(TIM_HandleTypeDef *tim, uint16_t us)
 {

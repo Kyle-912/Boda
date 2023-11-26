@@ -18,13 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 #include "string.h"
 #include "PS2.h"
-#include "A4988.c"
+#include "A4988.h"
 
 /* USER CODE END Includes */
 
@@ -41,11 +42,16 @@ typedef int bool; // Define a custom boolean type
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define map_range(value, in_min, in_max, out_min, out_max) \
+  (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
 
+#define low_rpm 50
+#define high_rpm 300
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
+SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
@@ -53,14 +59,53 @@ TIM_HandleTypeDef htim14;
 
 UART_HandleTypeDef huart2;
 
+/* Definitions for PS2DataUpdate */
+osThreadId_t PS2DataUpdateHandle;
+const osThreadAttr_t PS2DataUpdate_attributes = {
+    .name = "PS2DataUpdate",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityHigh,
+};
+/* Definitions for StepperMotor1 */
+osThreadId_t StepperMotor1Handle;
+const osThreadAttr_t StepperMotor1_attributes = {
+    .name = "StepperMotor1",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for StepperMotor2 */
+osThreadId_t StepperMotor2Handle;
+const osThreadAttr_t StepperMotor2_attributes = {
+    .name = "StepperMotor2",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for StepperMotor3 */
+osThreadId_t StepperMotor3Handle;
+const osThreadAttr_t StepperMotor3_attributes = {
+    .name = "StepperMotor3",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for StepperMotor4 */
+osThreadId_t StepperMotor4Handle;
+const osThreadAttr_t StepperMotor4_attributes = {
+    .name = "StepperMotor4",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for AttachmentTest */
+osThreadId_t AttachmentTestHandle;
+const osThreadAttr_t AttachmentTest_attributes = {
+    .name = "AttachmentTest",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+/* Definitions for mPS2Data */
+osMutexId_t mPS2DataHandle;
+const osMutexAttr_t mPS2Data_attributes = {
+    .name = "mPS2Data"};
 /* USER CODE BEGIN PV */
-
-stepper *motor1 = NULL;
-stepper *motor2 = NULL;
-stepper *motor3 = NULL;
-stepper *motor4 = NULL;
-
-PS2ControllerHandler ps2;
 
 /* USER CODE END PV */
 
@@ -72,9 +117,29 @@ static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM14_Init(void);
+static void MX_SPI3_Init(void);
+void StartPS2DataUpdate(void *argument);
+void StartStepperMotor1(void *argument);
+void StartStepperMotor2(void *argument);
+void StartStepperMotor3(void *argument);
+void StartStepperMotor4(void *argument);
+void StartAttachmentTest(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 void PS2_Init(PS2ControllerHandler *ps2);
+
+PS2ControllerHandler ps2;
+
+float rpm = 300;
+short microsteps = FULL_STEPS;
+double deg = 20;
+const short spr = 200; // Steps per revolution
+
+stepper *motor1 = NULL;
+stepper *motor2 = NULL;
+stepper *motor3 = NULL;
+stepper *motor4 = NULL;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -114,87 +179,81 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_TIM14_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
   // Enable TIM3 global Interrupt & set priority
   HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
-  PS2_Init(&ps2);
+  //----------STEPPER VARIABLES----------//
 
-  char *messageX = "X has been Pressed\r\n";
-  char *messageO = "O has been Pressed\r\n";
+  //---------STEPPER INIT-----------//
+
+  //----------PS2 INIT----------//
+  PS2_Init(&ps2);
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of mPS2Data */
+  mPS2DataHandle = osMutexNew(&mPS2Data_attributes);
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of PS2DataUpdate */
+  PS2DataUpdateHandle = osThreadNew(StartPS2DataUpdate, NULL, &PS2DataUpdate_attributes);
+
+  /* creation of StepperMotor1 */
+  StepperMotor1Handle = osThreadNew(StartStepperMotor1, NULL, &StepperMotor1_attributes);
+
+  /* creation of StepperMotor2 */
+  StepperMotor2Handle = osThreadNew(StartStepperMotor2, NULL, &StepperMotor2_attributes);
+
+  /* creation of StepperMotor3 */
+  // StepperMotor3Handle = osThreadNew(StartStepperMotor3, NULL, &StepperMotor3_attributes);
+
+  /* creation of StepperMotor4 */
+  // StepperMotor4Handle = osThreadNew(StartStepperMotor4, NULL, &StepperMotor4_attributes);
+
+  /* creation of AttachmentTest */
+  AttachmentTestHandle = osThreadNew(StartAttachmentTest, NULL, &AttachmentTest_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  /* USER CODE END WHILE */
 
-  bool toggle1 = true;
-  bool toggle2 = true;
-
-  float rpm = 300;
-  short microsteps = FULL_STEPS;
-  double deg = 20;
-  const short spr = 200; // Steps per revolution
-
-  stepper stepper_motor_1;
-  motor1 = &stepper_motor_1;
-  init_stepper(motor1, spr);
-  init_dir_pin(motor1, GPIOA, GPIO_PIN_10);
-  init_step_pin(motor1, GPIOB, GPIO_PIN_8);
-  init_sleep_pin(motor1, GPIOB, GPIO_PIN_5);
-  set_micro_en(motor1, 0);
-  set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
-
-  stepper stepper_motor_2;
-  motor2 = &stepper_motor_2;
-  init_stepper(motor2, spr);
-  init_dir_pin(motor2, GPIOA, GPIO_PIN_9);
-  init_step_pin(motor2, GPIOA, GPIO_PIN_8);
-  init_sleep_pin(motor2, GPIOB, GPIO_PIN_4);
-  set_micro_en(motor2, 0);
-  set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
-
-  while (1)
-  {
-    PS2_Update(&ps2);
-
-    if (Is_Button_Pressed(&ps2, X))
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageX, strlen(messageX), 100);
-      toggle1 = true;
-    }
-    else
-    {
-      toggle1 = false;
-    }
-
-    if (toggle1 && !motor1->steps_remaining)
-    {
-      move_stepper_deg(motor1, deg);
-    }
-
-    if (Is_Button_Pressed(&ps2, CIRCLE))
-    {
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
-      toggle2 = true;
-    }
-    else
-    {
-      toggle2 = false;
-    }
-
-    if (toggle2 && !motor2->steps_remaining)
-    {
-      move_stepper_deg(motor2, deg);
-    }
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
@@ -279,6 +338,43 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+}
+
+/**
+ * @brief SPI3 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_SPI3_Init(void)
+{
+
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi3.Instance = SPI3;
+  hspi3.Init.Mode = SPI_MODE_MASTER;
+  hspi3.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
+  hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_LSB;
+  hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi3.Init.CRCPolynomial = 10;
+  if (HAL_SPI_Init(&hspi3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
 }
 
 /**
@@ -450,7 +546,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4 | LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_8, GPIO_PIN_RESET);
@@ -463,6 +559,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LD2_Pin PA8 PA9 PA10 */
   GPIO_InitStruct.Pin = LD2_Pin | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
@@ -546,10 +649,358 @@ void PS2_Init(PS2ControllerHandler *ps2)
   ps2->spi = &hspi2;
   ps2->tim = &htim1;
   HAL_GPIO_WritePin(ps2->GPIO, ps2->PIN, GPIO_PIN_SET);
-  ps2->tim->Instance->CNT = 0;
-  ps2->tim->Instance->CR1 |= TIM_CR1_CEN;
 }
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartPS2DataUpdate */
+/**
+ * @brief  Function implementing the PS2DataUpdate thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartPS2DataUpdate */
+void StartPS2DataUpdate(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+
+  /* Infinite loop */
+  // Attempt to get the PS2Data Mutex
+  for (;;)
+  {
+    osMutexWait(mPS2DataHandle, 50);
+    PS2_Update(&ps2);
+    // delay for 25 microseconds
+    osMutexRelease(mPS2DataHandle);
+    osDelay(25U);
+  }
+  // Return the PS2Data Mutex
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartStepperMotor1 */
+/**
+ * @brief Function implementing the StepperMotor1 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartStepperMotor1 */
+void StartStepperMotor1(void *argument)
+{
+  /* USER CODE BEGIN StartStepperMotor1 */
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor1 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_10);
+  init_step_pin(&stepper_motor, GPIOB, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_5);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim3);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
+  char *messageR = "Left Stick Moved Right\r\n";
+  char *messageL = "Left Stick Moved Left\r\n";
+  double mapped_left = 0;
+  uint8_t left_val;
+
+  /* Infinite loop */
+  for (;;)
+  {
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick left right
+    left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+
+    // evaluate joystick status
+    if (left_val != NEUTRAL)
+    {
+      if (left_val < NEUTRAL)
+      {
+        set_dir_state(&stepper_motor, 1);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
+      }
+      else
+      {
+        set_dir_state(&stepper_motor, 0);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
+      }
+      set_rpm(&stepper_motor, mapped_left);
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
+    }
+    osMutexRelease(mPS2DataHandle);
+    osDelay(10);
+  }
+  /* USER CODE END StartStepperMotor1 */
+}
+
+/* USER CODE BEGIN Header_StartStepperMotor2 */
+/**
+ * @brief Function implementing the StepperMotor2 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartStepperMotor2 */
+void StartStepperMotor2(void *argument)
+{
+  /* USER CODE BEGIN StartStepperMotor2 */
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor2 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_9);
+  init_step_pin(&stepper_motor, GPIOA, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_4);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim14);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
+  char *messageU = "Left Stick Moved Up\r\n";
+  char *messageD = "Left Stick Moved Down\r\n";
+  double mapped_up = 0;
+  uint8_t up_val;
+
+  /* Infinite loop */
+  for (;;)
+  {
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick up down
+    up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+
+    // evaluate joystick status
+    if (up_val != NEUTRAL)
+    {
+      if (up_val < NEUTRAL)
+      {
+        set_dir_state(&stepper_motor, 1);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
+      }
+      else
+      {
+        set_dir_state(&stepper_motor, 0);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
+      }
+      set_rpm(&stepper_motor, mapped_up);
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
+    }
+    osMutexRelease(mPS2DataHandle);
+    osDelay(10);
+  }
+  /* USER CODE END StartStepperMotor2 */
+}
+
+/* USER CODE BEGIN Header_StartStepperMotor3 */
+/**
+ * @brief Function implementing the StepperMotor3 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartStepperMotor3 */
+void StartStepperMotor3(void *argument)
+{
+  /* USER CODE BEGIN StartStepperMotor1 */
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor3 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_10);
+  init_step_pin(&stepper_motor, GPIOB, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_5);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim3);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
+  char *messageR = "Left Stick Moved Right\r\n";
+  char *messageL = "Left Stick Moved Left\r\n";
+  double mapped_left = 0;
+  uint8_t left_val;
+
+  /* Infinite loop */
+  for (;;)
+  {
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick left right
+    left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+
+    // evaluate joystick status
+    if (left_val != NEUTRAL)
+    {
+      if (left_val < NEUTRAL)
+      {
+        set_dir_state(&stepper_motor, 1);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
+      }
+      else
+      {
+        set_dir_state(&stepper_motor, 0);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
+      }
+      set_rpm(&stepper_motor, mapped_left);
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
+    }
+    osMutexRelease(mPS2DataHandle);
+    osDelay(10);
+  }
+  /* USER CODE END StartStepperMotor1 */
+}
+
+/* USER CODE BEGIN Header_StartStepperMotor4 */
+/**
+ * @brief Function implementing the StepperMotor4 thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartStepperMotor4 */
+void StartStepperMotor4(void *argument)
+{
+  /* USER CODE BEGIN StartStepperMotor2 */
+
+  //----------Stepper Init----------//
+  stepper stepper_motor;
+  motor4 = &stepper_motor;
+  init_stepper(&stepper_motor, spr);
+  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_9);
+  init_step_pin(&stepper_motor, GPIOA, GPIO_PIN_8);
+  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_4);
+  set_micro_en(&stepper_motor, 0);
+  set_timer(&stepper_motor, &htim14);
+  set_rpm(&stepper_motor, rpm);
+
+  //----------Task Variables----------//
+  char *messageU = "Left Stick Moved Up\r\n";
+  char *messageD = "Left Stick Moved Down\r\n";
+  double mapped_up = 0;
+  uint8_t up_val;
+
+  /* Infinite loop */
+  for (;;)
+  {
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick up down
+    up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+
+    // evaluate joystick status
+    if (up_val != NEUTRAL)
+    {
+      if (up_val < NEUTRAL)
+      {
+        set_dir_state(&stepper_motor, 1);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
+      }
+      else
+      {
+        set_dir_state(&stepper_motor, 0);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
+      }
+      set_rpm(&stepper_motor, mapped_up);
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
+    }
+    osMutexRelease(mPS2DataHandle);
+    osDelay(10);
+  }
+  /* USER CODE END StartStepperMotor2 */
+}
+
+/* USER CODE BEGIN Header_StartAttachmentTest */
+/**
+ * @brief Function implementing the AttachmentTest thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartAttachmentTest */
+void StartAttachmentTest(void *argument)
+{
+  /* USER CODE BEGIN StartAttachmentTest */
+  /* Infinite loop */
+  uint8_t temp;
+  // We want the last thing to be transmitted to be 0x00 so when theres no
+  // buttons being pressed the last thing sent is 0
+  bool holding = false;
+  for (;;)
+  {
+    temp = 0;
+    // Get the PS2Data Mutex
+    osMutexWait(mPS2DataHandle, 10);
+
+    // Clear the X Pressed bit
+    temp &= 0b11111110;
+    // If the X is pressed set the X Pressed Bit
+    if (Is_Button_Pressed(&ps2, X))
+    {
+      temp |= 0b00000001;
+    }
+
+    // Clear the Circle Pressed bit
+    temp &= 0b11111101;
+    // If the Circle is pressed set the Circle Pressed Bit
+    if (Is_Button_Pressed(&ps2, CIRCLE))
+    {
+      temp |= 0b00000010;
+    }
+
+    // Clear the Triangle Pressed bit
+    temp &= 0b11111011;
+    // If the Triangle is pressed set the Triangle Pressed Bit
+    if (Is_Button_Pressed(&ps2, TRIANGLE))
+    {
+      temp |= 0b00000100;
+    }
+
+    // Clear the Square Pressed bit
+    temp &= 0b11110111;
+    // If the Square is pressed set the Square Pressed Bit
+    if (Is_Button_Pressed(&ps2, SQUARE))
+    {
+      temp |= 0b00001000;
+    }
+
+    if (temp != 0)
+    {
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+      HAL_SPI_Transmit(&hspi3, &temp, 1, 50);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+      holding = true;
+    }
+    else if (holding == true)
+    {
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+      HAL_SPI_Transmit(&hspi3, &temp, 1, 50);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+      holding = false;
+    }
+    osMutexRelease(mPS2DataHandle);
+    osDelay(10);
+  }
+  /* USER CODE END StartAttachmentTest */
+}
 
 /**
  * @brief  This function is executed in case of error occurrence.
