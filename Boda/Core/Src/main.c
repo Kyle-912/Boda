@@ -45,8 +45,8 @@ typedef int bool; // Define a custom boolean type
 #define map_range(value, in_min, in_max, out_min, out_max) \
   (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
 
-#define low_rpm 50
-#define high_rpm 300
+#define low_rpm 25
+#define high_rpm 50
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -718,13 +718,13 @@ void StartStepperMotor1(void *argument)
       if (left_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 127, 0, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 127, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
       }
       set_rpm(&stepper_motor, mapped_left);
@@ -781,13 +781,13 @@ void StartStepperMotor2(void *argument)
       if (up_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        mapped_up = map_range(up_val, 127, 0, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        mapped_up = map_range(up_val, 127, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
       }
       set_rpm(&stepper_motor, mapped_up);
