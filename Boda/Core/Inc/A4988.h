@@ -57,6 +57,7 @@ void set_microsteps(stepper *motor, short microsteps);
 void set_timer(stepper *motor, TIM_HandleTypeDef *timer);
 void set_rpm(stepper *motor, float rpm);
 void set_dir_state(stepper *motor, short dir_state);
+void set_micro_en(stepper *motor, uint8_t micro_en);
 uint8_t setMicrostep(stepper *motor);
 long calcStepsForRotation(stepper *motor, double deg);
 void move_stepper_deg(stepper *motor, double deg);
