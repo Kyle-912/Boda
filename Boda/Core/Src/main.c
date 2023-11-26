@@ -26,6 +26,7 @@
 #include "string.h"
 #include "PS2.h"
 #include "A4988.h"
+#include "robot_arm.h"
 
 /* USER CODE END Includes */
 
@@ -593,34 +594,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-void pulse_stepper(stepper *motor)
-{
-  // motor1->steps_remaining--;
-  if (motor->steps_remaining <= 0)
-  {
-    HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-    HAL_TIM_Base_Stop_IT(motor->timer);
-  }
-  // We should pull HIGH for at least 1-2us (step_high_min)
-  else
-  {
-    GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor->step_port, motor->step_pin);
-    if (currentPinState == GPIO_PIN_SET)
-    {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
-    }
-    else
-    {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
-      motor->steps_remaining--;
-    }
-    __HAL_TIM_SET_COUNTER(motor->timer, 0);
-  }
-}
-
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
