@@ -1,7 +1,5 @@
 #include "A4988.h"
 
-#define STEP_PULSE(steps, microsteps, rpm) (60.0 * 1000000L / steps / microsteps / rpm)
-
 const uint8_t MS_TABLE[] = {0b000, 0b001, 0b010, 0b011, 0b111};
 const uint8_t MS_TABLE_SIZE = sizeof(MS_TABLE);
 
