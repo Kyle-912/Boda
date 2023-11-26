@@ -3,12 +3,15 @@
 
 #include "stm32f4xx_hal.h"
 
+#define MAX_DEGREES 360
+
 #define FULL_STEPS 1
 #define HALF_STEPS 2
 #define QUART_STEPS 3
 
 // Define the stepper structure
-typedef struct {
+typedef struct
+{
     short steps;
     short dir_state;
     uint16_t enable_pin;
@@ -43,7 +46,7 @@ typedef struct {
 // Define constants
 extern const uint8_t MS_TABLE[];
 extern const uint8_t MS_TABLE_SIZE;
-#define STEP_PULSE(steps, microsteps, rpm) (60.0*1000000L/steps/microsteps/rpm)
+#define STEP_PULSE(steps, microsteps, rpm) (60.0 * 1000000L / steps / microsteps / rpm)
 
 // Function prototypes
 void init_stepper(stepper *motor, short spr);
@@ -61,5 +64,6 @@ void set_micro_en(stepper *motor, uint8_t micro_en);
 uint8_t setMicrostep(stepper *motor);
 long calcStepsForRotation(stepper *motor, double deg);
 void move_stepper_deg(stepper *motor, double deg);
+void pulse_stepper(stepper *motor);
 
 #endif // A4988_H
