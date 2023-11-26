@@ -702,13 +702,14 @@ void StartStepperMotor1(void *argument)
   //----------Task Variables----------//
   char *messageR = "Left Stick Moved Right\r\n";
   char *messageL = "Left Stick Moved Left\r\n";
-  bool toggle = false;
   double mapped_left = 0;
   uint8_t left_val;
 
   /* Infinite loop */
   for (;;)
   {
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick left right
     left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
 
     // evaluate joystick status
@@ -717,28 +718,23 @@ void StartStepperMotor1(void *argument)
       if (left_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
       }
       set_rpm(&stepper_motor, mapped_left);
-      toggle = true;
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
     }
-    else
-    {
-      toggle = false;
-    }
-
-    // If the joystick is moved move the motor
-    if (toggle && !stepper_motor.steps_remaining)
-    {
-      move_stepper_deg(&stepper_motor, deg);
-    }
+    osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
   /* USER CODE END StartStepperMotor1 */
@@ -769,43 +765,39 @@ void StartStepperMotor2(void *argument)
   //----------Task Variables----------//
   char *messageU = "Left Stick Moved Up\r\n";
   char *messageD = "Left Stick Moved Down\r\n";
-  bool toggle = false;
-  uint8_t up_val;
   double mapped_up = 0;
+  uint8_t up_val;
 
   /* Infinite loop */
   for (;;)
   {
+    osMutexWait(mPS2DataHandle, 50);
     // get the current value of the joystick up down
     up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
 
+    // evaluate joystick status
     if (up_val != NEUTRAL)
     {
       if (up_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
-        // HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
-        // HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
+        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
       }
       set_rpm(&stepper_motor, mapped_up);
-      toggle = true;
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
     }
-    else
-    {
-      toggle = false;
-    }
-
-    // If the joystick is moved move the motor
-    if (toggle && !stepper_motor.steps_remaining)
-    {
-      move_stepper_deg(&stepper_motor, deg);
-    }
+    osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
   /* USER CODE END StartStepperMotor2 */
@@ -820,12 +812,12 @@ void StartStepperMotor2(void *argument)
 /* USER CODE END Header_StartStepperMotor3 */
 void StartStepperMotor3(void *argument)
 {
-  /* USER CODE BEGIN StartStepperMotor3 */
+  /* USER CODE BEGIN StartStepperMotor1 */
+
   //----------Stepper Init----------//
   stepper stepper_motor;
   motor3 = &stepper_motor;
   init_stepper(&stepper_motor, spr);
-  // TODO: CHANGE THESE TO PROPER PINS
   init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_10);
   init_step_pin(&stepper_motor, GPIOB, GPIO_PIN_8);
   init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_5);
@@ -834,16 +826,17 @@ void StartStepperMotor3(void *argument)
   set_rpm(&stepper_motor, rpm);
 
   //----------Task Variables----------//
-  char *messageR = "Right Stick Moved Right\r\n";
-  char *messageL = "Right Stick Moved Left\r\n";
-  bool toggle = false;
+  char *messageR = "Left Stick Moved Right\r\n";
+  char *messageL = "Left Stick Moved Left\r\n";
   double mapped_left = 0;
   uint8_t left_val;
 
   /* Infinite loop */
   for (;;)
   {
-    left_val = Is_Joystick_Right_Moved(&ps2, JOYSTICK_R_RL);
+    osMutexWait(mPS2DataHandle, 50);
+    // get the current value of the joystick left right
+    left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
 
     // evaluate joystick status
     if (left_val != NEUTRAL)
@@ -851,31 +844,26 @@ void StartStepperMotor3(void *argument)
       if (left_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
+        mapped_left = map_range(left_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
       }
       set_rpm(&stepper_motor, mapped_left);
-      toggle = true;
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
     }
-    else
-    {
-      toggle = false;
-    }
-
-    // If the joystick is moved move the motor
-    if (toggle && !stepper_motor.steps_remaining)
-    {
-      move_stepper_deg(&stepper_motor, deg);
-    }
+    osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
-  /* USER CODE END StartStepperMotor3 */
+  /* USER CODE END StartStepperMotor1 */
 }
 
 /* USER CODE BEGIN Header_StartStepperMotor4 */
@@ -887,7 +875,8 @@ void StartStepperMotor3(void *argument)
 /* USER CODE END Header_StartStepperMotor4 */
 void StartStepperMotor4(void *argument)
 {
-  /* USER CODE BEGIN StartStepperMotor4 */
+  /* USER CODE BEGIN StartStepperMotor2 */
+
   //----------Stepper Init----------//
   stepper stepper_motor;
   motor4 = &stepper_motor;
@@ -900,50 +889,44 @@ void StartStepperMotor4(void *argument)
   set_rpm(&stepper_motor, rpm);
 
   //----------Task Variables----------//
-  char *messageU = "Right Stick Moved Up\r\n";
-  char *messageD = "Right Stick Moved Down\r\n";
-  bool toggle = false;
-  uint8_t up_val;
+  char *messageU = "Left Stick Moved Up\r\n";
+  char *messageD = "Left Stick Moved Down\r\n";
   double mapped_up = 0;
+  uint8_t up_val;
 
   /* Infinite loop */
   for (;;)
   {
-
+    osMutexWait(mPS2DataHandle, 50);
     // get the current value of the joystick up down
-    up_val = Is_Joystick_Right_Moved(&ps2, JOYSTICK_R_UD);
+    up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
 
+    // evaluate joystick status
     if (up_val != NEUTRAL)
     {
       if (up_val < NEUTRAL)
       {
         set_dir_state(&stepper_motor, 1);
-        mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
       }
       else
       {
         set_dir_state(&stepper_motor, 0);
-        mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
+        mapped_up = map_range(up_val, 0, 255, low_rpm, high_rpm);
         HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
       }
       set_rpm(&stepper_motor, mapped_up);
-      toggle = true;
+      // If the joystick is moved move the motor
+      if (!stepper_motor.steps_remaining)
+      {
+        move_stepper_deg(&stepper_motor, deg);
+      }
     }
-    else
-    {
-      toggle = false;
-    }
-
-    // If the joystick is moved move the motor
-    if (toggle && !stepper_motor.steps_remaining)
-    {
-      move_stepper_deg(&stepper_motor, deg);
-    }
-
+    osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
-  /* USER CODE END StartStepperMotor4 */
+  /* USER CODE END StartStepperMotor2 */
 }
 
 /* USER CODE BEGIN Header_StartAttachmentTest */
