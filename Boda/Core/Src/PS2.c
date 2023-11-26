@@ -68,7 +68,7 @@ bool Is_DPad_Pressed(PS2ControllerHandler *ps2i, uint8_t button)
 
 uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 {
-    //If the direction isnt for the Right Joystick LR or UD then exit
+    // If the direction isnt for the Right Joystick LR or UD then exit
     if (direction == 3 || direction == 4)
     {
         uint8_t temp = ps2i->PS2Data[direction];
@@ -83,7 +83,7 @@ uint8_t Is_Joystick_Right_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 
 uint8_t Is_Joystick_Left_Moved(PS2ControllerHandler *ps2i, uint8_t direction)
 {
-    //If the direction isnt for the Left Joystick LR or UD then exit
+    // If the direction isnt for the Left Joystick LR or UD then exit
     if (direction == 5 || direction == 6)
     {
         uint8_t temp = ps2i->PS2Data[direction];
