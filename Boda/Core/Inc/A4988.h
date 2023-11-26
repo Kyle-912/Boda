@@ -3,6 +3,8 @@
 
 #include "stm32f4xx_hal.h"
 
+#define MAX_DEGREES 360
+
 #define FULL_STEPS 1
 #define HALF_STEPS 2
 #define QUART_STEPS 3

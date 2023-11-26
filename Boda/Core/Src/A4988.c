@@ -107,6 +107,11 @@ void set_micro_en(stepper *motor, uint8_t micro_en) {
     motor->enable_microsteps = micro_en;
 }
 
+// set dir state (clockwise/counter-clockwise)
+void home(stepper *motor) {
+    motor->step_count = 0;
+}
+
 uint8_t setMicrostep(stepper *motor) {
     int i = 0;
     while (i < MS_TABLE_SIZE)
@@ -205,24 +210,35 @@ void pulse_stepper(stepper *motor)
     // IF pin state is set: reset the pin and wait step_pulse
     if (currentPinState == GPIO_PIN_SET)
     {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
+        HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+        __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
     }
     // ELSE: set the pin for 20 us
     // We should pull HIGH for at least 1-2us (step_high_min)
     else
     {
-      HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
-      __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
+        // Check if within bounds of motor
+        //--------------------------------
+        // 1. if 0 and trying to decrease
+        if (motor->step_count == 0 && motor->dir_state) 
+            return;
+        // 2. if 360 and trying to increase
+        else if (motor->step_count == MAX_DEGREES && !motor->dir_state)
+            return;
+        //--------------------------------
 
-      // Dec steps remaining in current move
-      motor->steps_remaining--;
+        // Not outside bounds -- GREAT
+        HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
+        __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
 
-      // Inc/Dec the stepper position
-      if (!motor->dir_state) // 0 = clockwise?
-        motor->step_count++;
-      else // 1 = counter-clockwise?
-        motor->step_count--;
+        // Dec steps remaining in current move
+        motor->steps_remaining--;
+
+        // Inc/Dec the stepper position
+        if (!motor->dir_state) // 0 = clockwise?
+            motor->step_count++;
+        else // 1 = counter-clockwise?
+            motor->step_count--;
 
     }
     // RESET timer
