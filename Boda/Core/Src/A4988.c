@@ -284,6 +284,8 @@ void pulse_stepper(stepper *motor)
             HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
             // STOP timer
             HAL_TIM_Base_Stop_IT(motor->timer);
+            // Reset Steps
+            motor->steps_remaining = 0;
             return;
         }
         // 2. if 360 and trying to increase
@@ -293,6 +295,8 @@ void pulse_stepper(stepper *motor)
             HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
             // STOP timer
             HAL_TIM_Base_Stop_IT(motor->timer);
+            // Reset Steps
+            motor->steps_remaining = 0;
             return;
         }
         //--------------------------------
