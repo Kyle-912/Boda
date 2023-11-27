@@ -2,14 +2,12 @@
 The current bugs are the SPI communcation with the peripheral not always being detected properly (probably timing but we intend to replace the communcation protocol later anyways) and the motors not running smoothly consistently (most likely due to the voltage/current being provided to the motors)
 
 **Kyle:**
-* Aggregated various datasheets/manuals (1)
-* Setup Github (.5)
-* Got the configuration code generator and ide working including the built in debugger (2)
-* Attempted to use various STM32 vscode extensions but none could do everything I wanted (2)
-* Decided to use custom toolchain to get all features from STM32CubeIDE to VSCode without limitations of existing extension (10)
-* Prepared toolchain and instructions for the rest of team (.5)
-* Helped others get toolchain configured (1)
-* Assisted in debugging reading SPI from the controller and driving the motor with ARDUINO/A4988 chip (4)
+* Learned how to properly configure our toolchain such that VSCode properly reports any errors and is smooth to work in for every aspect of our project and so that we can easily used the cubeMX tool to configure our processor as desired (2)
+* Helped integrate the motor/controller drivers into the RTOS so that controller inputs drive motors (10)
+* Helped in debugging the integration of both drivers into the RTOS (5)
+* Ensure consistent formatting between all created files and handle merging of branches (3)
+* Experiment with all driver and RTOS code written by teammates and communicate with them to ensure I have a clear understanding of the operations of and interactions between all components of our project so that I can better understand any bugs which arise (15)
+* Assembled our prototype breadboard in a layout which guarantees easy debugging and testing of all systems while being relatively easy to understand and follow (1)
 
 **Alex:**
 * Researched STM microcontrollers for prototyping with chips that can be used for PCB's (1)
