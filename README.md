@@ -1,5 +1,5 @@
 # Boda
-Up to this point the work completed is reading inputs from the controller and telling a motor to turn on or off. The PS2 controller input is read over SPI and decoded by the STM32F4 microcontroller. Then, if the input is x, the stepper motor is toggled using custom drivers to communcate with the A4988 chip using the ARDUINO headers. Messages describing the actions of the code are printed over serial for debugging. While we have both parts of this working seperately, a bug relating to ownership of pins for different functions is preventing us from enabling both of these functionalities simultaneously so work will have to be done to correct the pin assignments in STM32CubeMX.
+The current bugs are the SPI communcation with the peripheral not always being detected properly (probably timing but we intend to replace the communcation protocol later anyways) and the motors not running smoothly consistently (most likely due to the voltage/current being provided to the motors)
 
 **Kyle:**
 * Aggregated various datasheets/manuals (1)
