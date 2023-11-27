@@ -156,7 +156,7 @@ int main(void)
   bool toggle1 = true;
   bool toggle2 = true;
 
-  float rpm = 200;
+  float rpm = 100;
   short microsteps = FULL_STEPS;
   double deg = 20;
   const short spr = 200; // Steps per revolution
@@ -190,28 +190,47 @@ int main(void)
   arm* robot_arm = &robot_arm_var;
   init_arm(robot_arm, 200.0f, motor1, motor2);
   home(robot_arm);
-  set_coordinate(robot_arm, 0, 20, 20);
-  set_coordinate(robot_arm, 1, 100, 25);
+
+  set_coordinate(robot_arm, 0, 10, 10);
+  set_coordinate(robot_arm, 1, 50, 100);
+  set_coordinate(robot_arm, 2, 100, 200);
   uint8_t coord = 0;
 
   while (1)
   {
+
+    for(int i = 0; i < 10; i++) {
+      move_stepper_steps(motor1, 30, 100);
+      move_stepper_steps(motor2, 30, 100);
+      HAL_Delay(1000);
+    }
+    for(int i = 0; i < 10; i++) {
+      move_stepper_steps(motor1, -30, 100);
+      move_stepper_steps(motor2, -30, 100);
+      HAL_Delay(1000);
+    }
+
     // if (coord == 0)
     // {
-    //   move(robot_arm, 1);
+    //   move(robot_arm, 0);
     //   coord = 1;
     // }
-    // else 
+    // else if (coord == 1)
     // {
-    //   move(robot_arm, 0);
+    //   move(robot_arm, 1);
+    //   coord = 2;
+    // }
+    // else if (coord == 2)
+    // {
+    //   move(robot_arm, 2);
     //   coord = 0;
     // }
 
-    // move_stepper_steps(motor1, 100, 200);
-    // move_stepper_steps(motor2, 100, 200);
+    // move_stepper_steps(motor1, 30, 200);
+    // move_stepper_steps(motor2, 30, 200);
 
-    move_stepper_deg(motor1, 185);
-    move_stepper_deg(motor2, 185);
+    // move_stepper_deg(motor1, 185);
+    // move_stepper_deg(motor2, 185);
 
     HAL_Delay(1000);
 

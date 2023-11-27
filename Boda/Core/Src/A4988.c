@@ -16,6 +16,7 @@ void init_stepper(stepper *motor, short spr)
     motor->rpm = 0;
     motor->step_pulse = 0;
     motor->enable_microsteps = 1;
+    motor->max_steps = 200;
 
     motor->dir_port = NULL; // Default = Null (pointer)
     motor->dir_pin = 0;     // Default = 0 (uint16_t)
@@ -132,6 +133,11 @@ uint8_t setMicrostep(stepper *motor) {
     return -1;
 }
 
+void set_max_steps(stepper *motor, short max)
+{
+    motor->max_steps = max;
+}
+
 // long calcStepsForRotation(stepper *motor, long deg){
 //     return deg * motor->steps * (long)motor->microsteps / 360;
 // }
@@ -141,21 +147,33 @@ long calcStepsForRotation(stepper *motor, double deg)
     return deg * motor->steps * motor->microsteps / 360;
 }
 
-void move_stepper_steps(stepper *motor, int16_t steps, float rpm)
+void move_stepper_steps(stepper *motor, int16_t steps_, float rpm_)
 {
+    if (motor->enable_microsteps){
+        if (setMicrostep(motor) == -1)
+        {
+            // Error in setting microsteps
+            return;
+        }
+    }
+
     // if negative steps, set dir
-    if (steps < 0)
+    if (steps_ < 0)
     {
         motor->dir_state = 1;
-        steps = steps * -1;
+        steps_ = steps_ * -1;
+    }
+    else
+    {
+        motor->dir_state = 0;
     }
     // set steps
-    motor->steps_remaining = steps;
-    motor->step_count = 0;
+    motor->steps_remaining = steps_;
+    // motor->step_count = 0;
 
     // set rpm
-    motor->rpm = rpm;
-    motor->step_pulse = STEP_PULSE(motor->steps, motor->microsteps, rpm);
+    motor->rpm = rpm_;
+    motor->step_pulse = STEP_PULSE(steps_, motor->microsteps, rpm_);
 
     // Set step output LOW
     HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
@@ -197,6 +215,10 @@ void move_stepper_deg(stepper *motor, double deg) {
         deg = deg * -1;
         motor->dir_state = 1;
     }
+    else
+    {
+        motor->dir_state = 0;
+    }
 
     // Set step output LOW
     HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
@@ -206,7 +228,7 @@ void move_stepper_deg(stepper *motor, double deg) {
 
     motor->steps_remaining = calcStepsForRotation(motor, deg);
     motor->step_pulse = STEP_PULSE(motor->steps, motor->microsteps, motor->rpm);
-    motor->step_count = 0;
+    // motor->step_count = 0;
 
     // Output DIR state
     HAL_GPIO_WritePin(motor->dir_port, motor->dir_pin, motor->dir_state);
@@ -257,10 +279,22 @@ void pulse_stepper(stepper *motor)
         //--------------------------------
         // 1. if 0 and trying to decrease
         if (motor->step_count <= 0 && motor->dir_state) 
+        {
+            // reset step pin (don't keep step pin high)
+            HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+            // STOP timer
+            HAL_TIM_Base_Stop_IT(motor->timer);
             return;
+        }
         // 2. if 360 and trying to increase
-        else if (motor->step_count >= MAX_DEGREES && !motor->dir_state)
+        else if (motor->step_count >= motor->max_steps && !motor->dir_state)
+        {
+            // reset step pin (don't keep step pin high)
+            HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
+            // STOP timer
+            HAL_TIM_Base_Stop_IT(motor->timer);
             return;
+        }
         //--------------------------------
 
         // Not outside bounds -- GREAT

@@ -13,6 +13,7 @@
 typedef struct {
     short steps;
     short dir_state;
+    short max_steps;
     uint16_t enable_pin;
     uint8_t enable_microsteps;
     long step_count;
@@ -56,11 +57,13 @@ void init_ms1_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_ms2_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_ms3_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void set_microsteps(stepper *motor, short microsteps);
+void set_max_steps(stepper *motor, short max);
 void set_timer(stepper *motor, TIM_HandleTypeDef *timer);
 void set_rpm(stepper *motor, float rpm);
 void set_dir_state(stepper *motor, short dir_state);
 uint8_t setMicrostep(stepper *motor);
 long calcStepsForRotation(stepper *motor, double deg);
+void move_stepper_steps(stepper *motor, int16_t steps_, float rpm_);
 void move_stepper_deg(stepper *motor, double deg);
 void pulse_stepper(stepper *motor);
 
