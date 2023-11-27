@@ -199,32 +199,32 @@ int main(void)
   while (1)
   {
 
-    for(int i = 0; i < 10; i++) {
-      move_stepper_steps(motor1, 30, 100);
-      move_stepper_steps(motor2, 30, 100);
-      HAL_Delay(1000);
-    }
-    for(int i = 0; i < 10; i++) {
-      move_stepper_steps(motor1, -30, 100);
-      move_stepper_steps(motor2, -30, 100);
-      HAL_Delay(1000);
-    }
+    // for(int i = 0; i < 10; i++) {
+    //   move_stepper_steps(motor1, 30, 100);
+    //   move_stepper_steps(motor2, 30, 100);
+    //   HAL_Delay(1000);
+    // }
+    // for(int i = 0; i < 10; i++) {
+    //   move_stepper_steps(motor1, -30, 100);
+    //   move_stepper_steps(motor2, -30, 100);
+    //   HAL_Delay(1000);
+    // }
 
-    // if (coord == 0)
-    // {
-    //   move(robot_arm, 0);
-    //   coord = 1;
-    // }
-    // else if (coord == 1)
-    // {
-    //   move(robot_arm, 1);
-    //   coord = 2;
-    // }
-    // else if (coord == 2)
-    // {
-    //   move(robot_arm, 2);
-    //   coord = 0;
-    // }
+    if (coord == 0)
+    {
+      move(robot_arm, 0);
+      coord = 1;
+    }
+    else if (coord == 1)
+    {
+      move(robot_arm, 1);
+      coord = 2;
+    }
+    else if (coord == 2)
+    {
+      move(robot_arm, 2);
+      coord = 0;
+    }
 
     // move_stepper_steps(motor1, 30, 200);
     // move_stepper_steps(motor2, 30, 200);
@@ -232,7 +232,7 @@ int main(void)
     // move_stepper_deg(motor1, 185);
     // move_stepper_deg(motor2, 185);
 
-    HAL_Delay(1000);
+    HAL_Delay(5000);
 
 
     // PS2_Update(&ps2);
