@@ -4,8 +4,8 @@
             "name": "STM32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/include/",
-                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/"
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
             ],
             "defines": [
                 "_DEBUG",
