@@ -10,12 +10,12 @@ The current bugs are the SPI communcation with the peripheral not always being d
 * Assembled our prototype breadboard in a layout which guarantees easy debugging and testing of all systems while being relatively easy to understand and follow (1)
 
 **Alex:**
-* Researched STM microcontrollers for prototyping with chips that can be used for PCB's (1)
-* Sourced and purchased materials (0.5)
-* Searched for documentation of our microcontrollers, components, and peripherals (3)
-* Researched Playstation 2 (PS2) Controller Protocol and how to implement it on hardware (2)
-* Recreated the PS2 controller protocol on STM Nucleo-F446RE dev board over SPI to send commands and receive current states of the inputs (14) 
-* Created a physical testing environment for hardware with waveforms and Diligent Analog Discovery 2 board (2)
+* Learning freeRTOS principles, researching STM32 freeRTOS implementation and libraries (15)
+* Converting one infinite loop implementation to task/thread based freeRTOS implementation (25)
+* Debugging freeRTOS implementation for acceptable task/thread scheduling. (5)
+* Create an attachment testing environment, communicating through SPI, for future use. (10)
+* Experimented with servo implementation for better motor control using current controller drivers. (10) 
+* Finalize PS2 controller drivers, create example cases, create logic for controlling servos using incoming data (5)
 
 **Sean:**
 * Setting up and toubleshooting the work environment for STM32 (3)
