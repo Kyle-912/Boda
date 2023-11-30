@@ -18,13 +18,19 @@ The current bugs are the SPI communcation with the peripheral not always being d
 * Finalize PS2 controller drivers, create example cases, create logic for controlling servos using incoming data (5)
 
 **Sean:**
+* STM32 driver implementation for the stepper motors V1 and V2 (16)
+* Debuggin drivers and increasing reliability (14)
+* Creating a parent driver to keep track and manipulate multiple A4988 drivers (7)
+* Research and analysis of multi-motor movement. Created algorithm for linear motion (6)
+* Research single-pair ethernet protocol for high bandwidth communication with attachment (6)
+* Research and iterative design of RPM smoothing models - Linear, Quadratic, Sinusoidal (8)
 * Setting up and toubleshooting the work environment for STM32 (3)
 * Reading documentation for the STM32, A4988, and PS2 controller (1)
 * Arduino PWM initialization for the motor driver proof of concept (3)
-* STM32 driver implementation for the stepper motors (8)
-* Debugging and verifying waveforms using DAD2 board (2)
+* Debugging and verifying waveforms using DAD2 board (3)
 * Documenting changes and creating diagrams (2)
 * Data compiling and video preparation (1)
+
   
 
 
