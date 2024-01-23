@@ -3,14 +3,17 @@
         {
             "name": "STM32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/include",
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
                 "USE_HAL_DRIVER",
-                "STM32F446xx"
+                "STM32F446xx",
+                "USE_FREERTOS"
             ],
             "intelliSenseMode": "gcc-arm",
             "compilerPath": "${env:ARMGCC_DIR}/arm-none-eabi-gcc.exe",

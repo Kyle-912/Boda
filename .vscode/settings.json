@@ -1,6 +1,10 @@
 {
     "cSpell.ignoreWords": [
         "AHBCLK",
+        "DDOWN",
+        "DLEFT",
+        "DPAD",
+        "DRIGHT",
         "GPIOA",
         "GPIOB",
         "GPIOC",
@@ -9,6 +13,7 @@
         "HCLK",
         "HSICALIBRATION",
         "HWCONTROL",
+        "NVIC",
         "PLLM",
         "PLLN",
         "PLLP",
@@ -23,7 +28,8 @@
         "huart",
         "mylibrary",
         "pinss",
-        "pwm"
+        "pwm",
+        "rpms"
     ],
     "files.associations": {
         "stm32f4xx_hal.h": "c"
