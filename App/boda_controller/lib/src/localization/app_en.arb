@@ -1,0 +1,6 @@
+{
+  "appTitle": "boda_controller",
+  "@appTitle": {
+    "description": "The title of the application"
+  }
+}
