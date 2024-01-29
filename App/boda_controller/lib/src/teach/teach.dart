@@ -8,19 +8,6 @@ class TeachPage extends StatefulWidget {
 }
 
 class _TeachPageState extends State<TeachPage> {
-  int _counter = 0; // Initial counter value
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++; // Increment counter
-    });
-  }
-
-  void _decrementCounter() {
-    setState(() {
-      if (_counter > 0) _counter--; // Decrement counter but never go below 0
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
