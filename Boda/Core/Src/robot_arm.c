@@ -1,4 +1,5 @@
 #include "robot_arm.h"
+#include <math.h>
 
 void init_arm(arm* arm, float rpm_, stepper *motor1, stepper *motor2)
 {
@@ -96,6 +97,91 @@ void adjust_motors(float rpm, arm* arm, uint8_t coord)
     // }
 }
 
+
+// void adjust_motors_sinusoidal(float rpm, arm* arm, uint8_t coord)
+// {
+//     int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
+//     int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
+
+//     float time1 = fabs(delta_steps_1 * 1.8) / (rpm * 6); // Simplified time calculation
+//     float time2 = fabs(delta_steps_2 * 1.8) / (rpm * 6);
+
+//     float longest_time = fmax(time1, time2);
+
+//     float m1_rpm = (fabs(delta_steps_1) * 1.8) / (longest_time * 6);
+//     float m2_rpm = (fabs(delta_steps_2) * 1.8) / (longest_time * 6);
+
+//     // Define a suitable rise_time for the sinusoidal movement
+//     double rise_time = 1.0; // Example value, adjust based on your system's requirements
+
+//     // Use move_stepper_sinusoidal instead of move_stepper_steps
+//     move_stepper_sinusoidal(arm->motors[0], delta_steps_1, m1_rpm, rise_time);
+//     move_stepper_sinusoidal(arm->motors[1], delta_steps_2, m2_rpm, rise_time);
+// }
+
+// void adjust_motors_sinusoidal(float rpm, arm* arm, uint8_t coord, double rise_time) {
+//     // Calculate the delta steps for each motor
+//     int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
+//     int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
+
+//     // Initialize sinusoidal movement for each motor
+//     init_sinusoidal_vars(abs(delta_steps_1), rpm, rise_time, arm->motors[0]);
+//     init_sinusoidal_vars(abs(delta_steps_2), rpm, rise_time, arm->motors[1]);
+
+//     // Set the direction for each motor
+//     arm->motors[0]->dir_state = (delta_steps_1 < 0) ? 1 : 0;
+//     arm->motors[1]->dir_state = (delta_steps_2 < 0) ? 1 : 0;
+
+//     // Start the timer for each motor
+//     HAL_TIM_Base_Start_IT(arm->motors[0]->timer);
+//     HAL_TIM_Base_Start_IT(arm->motors[1]->timer);
+
+//     move_stepper_steps(arm->motors[0], delta_steps_1, m1_rpm);
+//     move_stepper_steps(arm->motors[1], delta_steps_2, m2_rpm);
+// }
+
+void adjust_motors_sinusoidal(float rpm, arm* arm, uint8_t coord, double rise_time) {
+    // Calculate the delta steps for each motor
+    int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
+    int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
+
+    // Calculate movement times and synchronize RPMs
+    float longest_time = fmax(
+        fabs(delta_steps_1 * 1.8) / (rpm * 6),
+        fabs(delta_steps_2 * 1.8) / (rpm * 6)
+    );
+
+    float m1_rpm = (fabs(delta_steps_1) * 1.8) / (longest_time * 6);
+    float m2_rpm = (fabs(delta_steps_2) * 1.8) / (longest_time * 6);
+
+    double temp_rpm_1 = m1_rpm;
+    double temp_rpm_2 = m2_rpm;
+
+    // Initialize sinusoidal movement for each motor
+    init_sinusoidal_vars(abs(delta_steps_1), temp_rpm_1 * 1.0f, rise_time, arm->motors[0]);
+    init_sinusoidal_vars(abs(delta_steps_2), temp_rpm_2 * 1.0f, rise_time, arm->motors[1]);
+
+    // Set the direction and steps remaining for each motor
+    arm->motors[0]->dir_state = (delta_steps_1 < 0) ? 1 : 0;
+    arm->motors[1]->dir_state = (delta_steps_2 < 0) ? 1 : 0;
+    arm->motors[0]->steps_remaining = abs(delta_steps_1);
+    arm->motors[1]->steps_remaining = abs(delta_steps_2);
+
+    // Set sleep output HIGH
+    HAL_GPIO_WritePin(arm->motors[0]->sleep_port, arm->motors[0]->sleep_pin, SET);
+    HAL_GPIO_WritePin(arm->motors[1]->sleep_port, arm->motors[1]->sleep_pin, SET);
+
+    // Output DIR state
+    HAL_GPIO_WritePin(arm->motors[0]->dir_port, arm->motors[0]->dir_pin, arm->motors[0]->dir_state);
+    HAL_GPIO_WritePin(arm->motors[1]->dir_port, arm->motors[1]->dir_pin, arm->motors[1]->dir_state);
+
+    // Start the timer for each motor
+    HAL_TIM_Base_Start_IT(arm->motors[0]->timer);
+    HAL_TIM_Base_Start_IT(arm->motors[1]->timer);
+}
+
+
+
 // float longest_travel_2(float rpm, arm* arm, uint8_t coord)
 // {
 //     // float longest_time = 0;
@@ -147,6 +233,11 @@ void home(arm* arm)
     arm->motors[1]->step_count = 0;
 }
 
+void set_arm_rpm(arm* arm, float rpm_)
+{
+    arm->rpm = rpm_;
+}
+
 void save_coordinate(arm* arm)
 {
     if (arm->num_coords < MAX_COORDINATES)
@@ -178,7 +269,9 @@ void del_coordinate(arm* arm)
 
 void move(arm* arm, uint8_t to_coord)
 {   
-    adjust_motors(arm->rpm, arm, to_coord);
+    adjust_motors_sinusoidal(arm->rpm, arm, to_coord, 4.0);
+
+    // adjust_motors(arm->rpm, arm, to_coord);
 
     // reset rpms
     // void set_rpm(stepper *motor, float rpm)

@@ -2,12 +2,14 @@
 #define A4988_H
 
 #include "stm32f4xx_hal.h"
+#include <stdbool.h>
 
 #define MAX_DEGREES 360
 
 #define FULL_STEPS 1
 #define HALF_STEPS 2
 #define QUART_STEPS 3
+#define RAMP_STEPS 80
 
 // Define the stepper structure
 typedef struct {
@@ -21,6 +23,19 @@ typedef struct {
     short microsteps;
     float rpm;
     long step_pulse;
+
+
+    // -- Vars associated with Sinusoidal RPM  --
+    float peak_rpm;
+    float min_rpm;
+    short current_step;
+    short total_steps;
+    short ramp_steps;
+    double max_delay;
+    volatile bool step_completed_flag;
+    volatile bool precalculation_done;
+    float rpm_values[RAMP_STEPS];
+    // ------------------------------------------
 
     GPIO_TypeDef *dir_port;
     uint16_t dir_pin;
@@ -47,6 +62,10 @@ typedef struct {
 extern const uint8_t MS_TABLE[];
 extern const uint8_t MS_TABLE_SIZE;
 #define STEP_PULSE(steps, microsteps, rpm) (60.0*1000000L/steps/microsteps/rpm)
+// #define SIMPLIFIED_STEP_PULSE(rpm) (60.0 * 5000L / rpm)
+#define SIMPLIFIED_STEP_PULSE(rpm) (300000L / rpm)
+
+
 
 // Function prototypes
 void init_stepper(stepper *motor, short spr);
@@ -61,10 +80,15 @@ void set_max_steps(stepper *motor, short max);
 void set_timer(stepper *motor, TIM_HandleTypeDef *timer);
 void set_rpm(stepper *motor, float rpm);
 void set_dir_state(stepper *motor, short dir_state);
+void set_micro_en(stepper *motor, uint8_t micro_en);
 uint8_t setMicrostep(stepper *motor);
 long calcStepsForRotation(stepper *motor, double deg);
 void move_stepper_steps(stepper *motor, int16_t steps_, float rpm_);
 void move_stepper_deg(stepper *motor, double deg);
 void pulse_stepper(stepper *motor);
 
+void init_sinusoidal_vars(int total, double peak_rpm, double rise_time, stepper *motor);
+// double calculate_next_sinusoidal_pulse(stepper *motor);
+
+float calculate_rpm_basic_ramp(stepper *motor);
 #endif // A4988_H

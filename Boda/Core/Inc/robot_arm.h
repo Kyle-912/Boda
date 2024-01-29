@@ -34,6 +34,9 @@ float longest_travel_2(float rpm, arm* arm, uint8_t coord);
 // Sets the arm's position to its home position.
 void home(arm* arm);
 
+// sets rpm for arm
+void set_arm_rpm(arm* arm, float rpm_);
+
 // Saves the current coordinate of the arm.
 void save_coordinate(arm* arm);
 

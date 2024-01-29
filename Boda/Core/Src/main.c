@@ -48,9 +48,9 @@
 #define motor2_sleep_port GPIOB
 #define motor2_sleep_pin GPIO_PIN_4
 
-typedef int bool; // Define a custom boolean type
-#define true 1    // Define true as 1
-#define false 0   // Define false as 0
+// typedef int bool; // Define a custom boolean type
+// #define true 1    // Define true as 1
+// #define false 0   // Define false as 0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -156,7 +156,7 @@ int main(void)
   bool toggle1 = true;
   bool toggle2 = true;
 
-  float rpm = 100;
+  float rpm = 400;
   short microsteps = FULL_STEPS;
   double deg = 20;
   const short spr = 200; // Steps per revolution
@@ -191,48 +191,150 @@ int main(void)
   init_arm(robot_arm, 200.0f, motor1, motor2);
   home(robot_arm);
 
-  set_coordinate(robot_arm, 0, 10, 10);
-  set_coordinate(robot_arm, 1, 50, 100);
-  set_coordinate(robot_arm, 2, 100, 200);
+  // set_coordinate(robot_arm, 0, 10, 10);
+  set_coordinate(robot_arm, 0, 2*80, 2*80);
+  set_coordinate(robot_arm, 1, 120*80, 200*80);
+  set_coordinate(robot_arm, 2, 30*80, 60*80);
   uint8_t coord = 0;
+  uint8_t rpm_step = 12;
 
+  int8_t flip = 1;
   while (1)
   {
+    // PS2_Update(&ps2);
 
+
+    // --------------------------------- MOTOR 2 GRADUAL INC
+    // if (Is_Button_Pressed(&ps2, X))
+    // {
+    //   set_rpm(motor1, rpm_step);
+    //   move_stepper_deg(motor1, 500 * flip);
+    //   while(motor1->steps_remaining);
+    //   // HAL_Delay(5000);
+    //   rpm_step += 5;
+    //   // set_rpm(motor1, rpm_step);
+    //   // move_stepper_deg(motor1, -500);
+    //   // HAL_Delay(5000);
+    //   // rpm_step += 5;
+
+    //   flip *= -1;
+    // }
+    // HAL_Delay(500);
+    // ---------------------------------
+
+    // ----------------------------------------------
     // for(int i = 0; i < 10; i++) {
-    //   move_stepper_steps(motor1, 30, 100);
-    //   move_stepper_steps(motor2, 30, 100);
+    //   // move_stepper_steps(motor1, 30, 100);
+    //   move_stepper_deg(motor2, 60);
+    //   // move_stepper_steps(motor2, 30, 100);
     //   HAL_Delay(1000);
     // }
     // for(int i = 0; i < 10; i++) {
-    //   move_stepper_steps(motor1, -30, 100);
-    //   move_stepper_steps(motor2, -30, 100);
+    //   // move_stepper_steps(motor1, -30, 100);
+    //   move_stepper_deg(motor2, -60);
+    //   // move_stepper_steps(motor2, -30, 100);
     //   HAL_Delay(1000);
     // }
+    // ---------------------------------------------- MOTOR INC / DEC
+
+
+    // ---------------------------------------------- MOVE BETWEEN POINTS
+    // if (coord == 0)
+    // {
+    //   set_arm_rpm(robot_arm, 200);
+    //   move(robot_arm, 0);
+    //   coord = 1;
+    // }
+    // else if (coord == 1)
+    // {
+    //   set_arm_rpm(robot_arm, 20);
+    //   move(robot_arm, 1);
+    //   coord = 2;
+    // }
+    // else if (coord == 2)
+    // {
+    //   set_arm_rpm(robot_arm, 150);
+    //   move(robot_arm, 2);
+    //   coord = 3;
+    // }
+    // else if (coord == 3)
+    // {
+    //   set_arm_rpm(robot_arm, 100);
+    //   move(robot_arm, 3);
+    //   coord = 0;
+    // }
+    // ---------------------------------------------- MOVE BETWEEN POINTS
+
+
+    // if (Is_Button_Pressed(&ps2, X))
+    // {
+    //   if (coord == 0)
+    //   {
+    //     set_arm_rpm(robot_arm, 80);
+    //     move(robot_arm, 0);
+    //     coord = 1;
+    //   }
+    //   else if (coord == 1)
+    //   {
+    //     set_arm_rpm(robot_arm, 20);
+    //     move(robot_arm, 1);
+    //     coord = 2;
+    //   }
+    //   else if (coord == 2)
+    //   {
+    //     set_arm_rpm(robot_arm, 150);
+    //     move(robot_arm, 2);
+    //     coord = 0;
+    //   }
+    //   // else if (coord == 3)
+    //   // {
+    //   //   set_arm_rpm(robot_arm, 100);
+    //   //   move(robot_arm, 3);
+    //   //   coord = 0;
+    //   // }
+
+    //   while(motor1->steps_remaining || motor2->steps_remaining);
+    // }
+    asm("nop");
 
     if (coord == 0)
     {
+      set_arm_rpm(robot_arm, 450);
       move(robot_arm, 0);
       coord = 1;
     }
     else if (coord == 1)
     {
+      set_arm_rpm(robot_arm, 450);
       move(robot_arm, 1);
       coord = 2;
     }
     else if (coord == 2)
     {
+      set_arm_rpm(robot_arm, 450);
       move(robot_arm, 2);
       coord = 0;
     }
+    // else if (coord == 3)
+    // {
+    //   set_arm_rpm(robot_arm, 100);
+    //   move(robot_arm, 3);
+    //   coord = 0;
+    // }
+
+    while(motor1->steps_remaining || motor2->steps_remaining);
+
+    HAL_Delay(2000);
+
+
 
     // move_stepper_steps(motor1, 30, 200);
     // move_stepper_steps(motor2, 30, 200);
 
     // move_stepper_deg(motor1, 185);
-    // move_stepper_deg(motor2, 185);
+    // move_stepper_deg(motor1, 60);
 
-    HAL_Delay(5000);
+    // HAL_Delay(2000);
 
 
     // PS2_Update(&ps2);
@@ -597,14 +699,50 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 // Callback function
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  // Check if the timer that elapsed is from motor1-motor4
-  if (htim->Instance == motor1->timer->Instance) pulse_stepper(motor1);
-  else if (htim->Instance == motor2->timer->Instance) pulse_stepper(motor2);
-  else if (htim->Instance == motor3->timer->Instance) pulse_stepper(motor3);
-  else if (htim->Instance == motor4->timer->Instance) pulse_stepper(motor4);
+// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+// {
+//   // Check if the timer that elapsed is from motor1-motor4
+//   if (htim->Instance == motor1->timer->Instance) pulse_stepper(motor1);
+//   else if (htim->Instance == motor2->timer->Instance) pulse_stepper(motor2);
+//   else if (htim->Instance == motor3->timer->Instance) pulse_stepper(motor3);
+//   else if (htim->Instance == motor4->timer->Instance) pulse_stepper(motor4);
+// }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+    stepper *current_motor = NULL;
+
+    // Determine which motor's timer has elapsed
+    if (htim->Instance == motor1->timer->Instance) current_motor = motor1;
+    else if (htim->Instance == motor2->timer->Instance) current_motor = motor2;
+    // Add conditions for motor3 and motor4 if needed
+
+    if (current_motor) {
+        pulse_stepper_sinusoid(current_motor);
+
+        // Adjust the step_pulse based on the sinusoidal profile for the next step
+        // This requires a function that calculates the delay for the next step
+        // based on the current step number and the sinusoidal profile
+        // if (current_motor->steps_remaining > 0) {
+        //     calculate_next_sinusoidal_pulse(current_motor);
+        //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
+        //     // RESET timer
+        //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
+        // }
+    }
 }
+
+// void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+//     if (htim->Instance == motor1->timer->Instance) {
+//         pulse_stepper(motor1);
+//         motor1->step_completed_flag = true;
+//     } else if (htim->Instance == motor2->timer->Instance) {
+//         pulse_stepper(motor2);
+//         motor2->step_completed_flag = true;
+//     }
+//     // Add similar else-if blocks for other motors (motor3, motor4, etc.) if needed
+// }
+
+
 
 void PS2_Init(PS2ControllerHandler *ps2)
 {
