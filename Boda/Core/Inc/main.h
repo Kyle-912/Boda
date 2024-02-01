@@ -57,46 +57,46 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Shoulder_1_2_Pin GPIO_PIN_13
-#define Shoulder_1_2_GPIO_Port GPIOC
-#define Shoulder_1_3_Pin GPIO_PIN_14
-#define Shoulder_1_3_GPIO_Port GPIOC
+#define Base_STEP_Pin GPIO_PIN_13
+#define Base_STEP_GPIO_Port GPIOC
+#define Base_SLEEP_Pin GPIO_PIN_14
+#define Base_SLEEP_GPIO_Port GPIOC
 #define Bluetooth_TX_Pin GPIO_PIN_2
 #define Bluetooth_TX_GPIO_Port GPIOA
 #define Bluetooth_RX_Pin GPIO_PIN_3
 #define Bluetooth_RX_GPIO_Port GPIOA
-#define Shoulder_2_1_Pin GPIO_PIN_6
-#define Shoulder_2_1_GPIO_Port GPIOA
-#define Shoulder_2_2_Pin GPIO_PIN_7
-#define Shoulder_2_2_GPIO_Port GPIOA
-#define Elbow_3_Pin GPIO_PIN_5
-#define Elbow_3_GPIO_Port GPIOC
+#define Shoulder_DIR_Pin GPIO_PIN_6
+#define Shoulder_DIR_GPIO_Port GPIOA
+#define Shoulder_STEP_Pin GPIO_PIN_7
+#define Shoulder_STEP_GPIO_Port GPIOA
+#define Elbow_SLEEP_Pin GPIO_PIN_5
+#define Elbow_SLEEP_GPIO_Port GPIOC
 #define PS2_Controller_SCK_Pin GPIO_PIN_10
 #define PS2_Controller_SCK_GPIO_Port GPIOB
 #define Attachment_GPIO_Pin GPIO_PIN_13
 #define Attachment_GPIO_GPIO_Port GPIOB
-#define PS2_Controller_MISO_Pin GPIO_PIN_14
-#define PS2_Controller_MISO_GPIO_Port GPIOB
-#define PS2_Controller_MOSI_Pin GPIO_PIN_15
-#define PS2_Controller_MOSI_GPIO_Port GPIOB
-#define Elbow_2_Pin GPIO_PIN_6
-#define Elbow_2_GPIO_Port GPIOC
-#define Elbow_1_Pin GPIO_PIN_8
-#define Elbow_1_GPIO_Port GPIOC
-#define PS2_Controller_Chip_Select_1_Pin GPIO_PIN_13
-#define PS2_Controller_Chip_Select_1_GPIO_Port GPIOA
-#define PS2_Controller_Chip_Select_2_Pin GPIO_PIN_14
-#define PS2_Controller_Chip_Select_2_GPIO_Port GPIOA
+#define PS2_Controller_Command_Pin GPIO_PIN_14
+#define PS2_Controller_Command_GPIO_Port GPIOB
+#define PS2_Controller_Data_Pin GPIO_PIN_15
+#define PS2_Controller_Data_GPIO_Port GPIOB
+#define Elbow_STEP_Pin GPIO_PIN_6
+#define Elbow_STEP_GPIO_Port GPIOC
+#define Elbow_DIR_Pin GPIO_PIN_8
+#define Elbow_DIR_GPIO_Port GPIOC
+#define PS2_Controller_Chip_Select_Pin GPIO_PIN_13
+#define PS2_Controller_Chip_Select_GPIO_Port GPIOA
+#define PS2_Controller_Acknowledge_Pin GPIO_PIN_14
+#define PS2_Controller_Acknowledge_GPIO_Port GPIOA
 #define Attachment_SCK_Pin GPIO_PIN_10
 #define Attachment_SCK_GPIO_Port GPIOC
 #define Attachment_MISO_Pin GPIO_PIN_11
 #define Attachment_MISO_GPIO_Port GPIOC
 #define Attachment_MOSI_Pin GPIO_PIN_12
 #define Attachment_MOSI_GPIO_Port GPIOC
-#define Shoulder_2_3_Pin GPIO_PIN_6
-#define Shoulder_2_3_GPIO_Port GPIOB
-#define Shoulder_1_1_Pin GPIO_PIN_7
-#define Shoulder_1_1_GPIO_Port GPIOB
+#define Shoulder_SLEEP_Pin GPIO_PIN_6
+#define Shoulder_SLEEP_GPIO_Port GPIOB
+#define Base_DIR_Pin GPIO_PIN_7
+#define Base_DIR_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

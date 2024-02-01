@@ -544,36 +544,36 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Shoulder_1_3_Pin|Elbow_3_Pin|Elbow_2_Pin|Elbow_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, Shoulder_2_1_Pin|Shoulder_2_2_Pin|PS2_Controller_Chip_Select_1_Pin|PS2_Controller_Chip_Select_2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Shoulder_DIR_Pin|Shoulder_STEP_Pin|PS2_Controller_Chip_Select_Pin|PS2_Controller_Acknowledge_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin|Shoulder_2_3_Pin|Shoulder_1_1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Shoulder_1_2_Pin */
-  GPIO_InitStruct.Pin = Shoulder_1_2_Pin;
+  /*Configure GPIO pin : Base_STEP_Pin */
+  GPIO_InitStruct.Pin = Base_STEP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Shoulder_1_2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(Base_STEP_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Shoulder_1_3_Pin Elbow_3_Pin Elbow_2_Pin Elbow_1_Pin */
-  GPIO_InitStruct.Pin = Shoulder_1_3_Pin|Elbow_3_Pin|Elbow_2_Pin|Elbow_1_Pin;
+  /*Configure GPIO pins : Base_SLEEP_Pin Elbow_SLEEP_Pin Elbow_STEP_Pin Elbow_DIR_Pin */
+  GPIO_InitStruct.Pin = Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Shoulder_2_1_Pin Shoulder_2_2_Pin PS2_Controller_Chip_Select_1_Pin PS2_Controller_Chip_Select_2_Pin */
-  GPIO_InitStruct.Pin = Shoulder_2_1_Pin|Shoulder_2_2_Pin|PS2_Controller_Chip_Select_1_Pin|PS2_Controller_Chip_Select_2_Pin;
+  /*Configure GPIO pins : Shoulder_DIR_Pin Shoulder_STEP_Pin PS2_Controller_Chip_Select_Pin PS2_Controller_Acknowledge_Pin */
+  GPIO_InitStruct.Pin = Shoulder_DIR_Pin|Shoulder_STEP_Pin|PS2_Controller_Chip_Select_Pin|PS2_Controller_Acknowledge_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Attachment_GPIO_Pin Shoulder_2_3_Pin Shoulder_1_1_Pin */
-  GPIO_InitStruct.Pin = Attachment_GPIO_Pin|Shoulder_2_3_Pin|Shoulder_1_1_Pin;
+  /*Configure GPIO pins : Attachment_GPIO_Pin Shoulder_SLEEP_Pin Base_DIR_Pin */
+  GPIO_InitStruct.Pin = Attachment_GPIO_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
