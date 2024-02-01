@@ -244,11 +244,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     /* USER CODE END WHILE */
-    while (1)
-    {
-      char *messageO = "Kernel Start Failed\r\n";
-      HAL_UART_Transmit(&huart2, (uint8_t *)messageO, strlen(messageO), 100);
-    }
+
     /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
@@ -548,36 +544,36 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Shoulder_1_3_Pin|Elbow_3_Pin|Elbow_2_Pin|Elbow_1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_13|GPIO_PIN_14, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Shoulder_2_1_Pin|Shoulder_2_2_Pin|PS2_Controller_Chip_Select_1_Pin|PS2_Controller_Chip_Select_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin|Shoulder_2_3_Pin|Shoulder_1_1_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  /*Configure GPIO pin : Shoulder_1_2_Pin */
+  GPIO_InitStruct.Pin = Shoulder_1_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(Shoulder_1_2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PC14 PC5 PC6 PC8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_8;
+  /*Configure GPIO pins : Shoulder_1_3_Pin Elbow_3_Pin Elbow_2_Pin Elbow_1_Pin */
+  GPIO_InitStruct.Pin = Shoulder_1_3_Pin|Elbow_3_Pin|Elbow_2_Pin|Elbow_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA6 PA7 PA13 PA14 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_13|GPIO_PIN_14;
+  /*Configure GPIO pins : Shoulder_2_1_Pin Shoulder_2_2_Pin PS2_Controller_Chip_Select_1_Pin PS2_Controller_Chip_Select_2_Pin */
+  GPIO_InitStruct.Pin = Shoulder_2_1_Pin|Shoulder_2_2_Pin|PS2_Controller_Chip_Select_1_Pin|PS2_Controller_Chip_Select_2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB13 PB6 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_6|GPIO_PIN_7;
+  /*Configure GPIO pins : Attachment_GPIO_Pin Shoulder_2_3_Pin Shoulder_1_1_Pin */
+  GPIO_InitStruct.Pin = Attachment_GPIO_Pin|Shoulder_2_3_Pin|Shoulder_1_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
