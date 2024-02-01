@@ -34,6 +34,7 @@ typedef struct {
     double max_delay;
     volatile bool step_completed_flag;
     volatile bool precalculation_done;
+    volatile bool sinusoidal_ramp;
     float rpm_values[RAMP_STEPS];
     // ------------------------------------------
 

@@ -188,13 +188,15 @@ int main(void)
 
   arm robot_arm_var;
   arm* robot_arm = &robot_arm_var;
-  init_arm(robot_arm, 200.0f, motor1, motor2);
+  // init_arm_2(robot_arm, 200.0f, motor1, motor2);
+  init_arm(robot_arm, 200.0, 2, motor1, motor2);
+
   home(robot_arm);
 
   // set_coordinate(robot_arm, 0, 10, 10);
-  set_coordinate(robot_arm, 0, 2*80, 2*80);
-  set_coordinate(robot_arm, 1, 120*80, 200*80);
-  set_coordinate(robot_arm, 2, 30*80, 60*80);
+  set_coordinate(robot_arm, 0, 2, 2*80, 2*80);
+  set_coordinate(robot_arm, 1, 2, 120*80, 200*80);
+  set_coordinate(robot_arm, 2, 2, 30*80, 60*80);
   uint8_t coord = 0;
   uint8_t rpm_step = 12;
 
