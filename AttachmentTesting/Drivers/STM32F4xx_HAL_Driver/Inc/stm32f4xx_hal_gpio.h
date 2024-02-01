@@ -97,7 +97,7 @@ typedef enum
 #define Shoulder_1_1_Pin                 ((uint16_t)0x0080) /* Pin 7 selected    */ // Added by Kyle to fix undefined error in main.c wherever it was referenced
 #define Shoulder_2_2_Pin                 ((uint16_t)0x0080) /* Pin 7 selected    */ // Added by Kyle to fix undefined error in main.c wherever it was referenced
 #define GPIO_PIN_8                       ((uint16_t)0x0100) /* Pin 8 selected    */
-#define Elbow_1_Pin                      ((uint16_t)0x0020) /* Pin 5 selected    */ // Added by Kyle to fix undefined error in main.c wherever it was referenced
+#define Elbow_1_Pin                      ((uint16_t)0x0100) /* Pin 8 selected    */ // Added by Kyle to fix undefined error in main.c wherever it was referenced
 #define GPIO_PIN_9                       ((uint16_t)0x0200) /* Pin 9 selected    */
 #define GPIO_PIN_10                      ((uint16_t)0x0400) /* Pin 10 selected   */
 #define GPIO_PIN_11                      ((uint16_t)0x0800) /* Pin 11 selected   */
