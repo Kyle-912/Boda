@@ -358,7 +358,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
   hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-  hspi3.Init.FirstBit = SPI_FIRSTBIT_LSB;
+  hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi3.Init.CRCPolynomial = 10;
@@ -607,11 +607,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 void PS2_Init(PS2ControllerHandler *ps2)
 {
-  ps2->GPIO = GPIOB;
-  ps2->PIN = GPIO_PIN_12;
+  ps2->Ack_GPIO = GPIOA;
+  ps2->Ack_PIN = GPIO_PIN_14;
+  ps2->CS_GPIO = GPIOA;
+  ps2->CS_PIN = GPIO_PIN_13;
   ps2->spi = &hspi2;
   ps2->tim = &htim1;
-  HAL_GPIO_WritePin(ps2->GPIO, ps2->PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
 }
 /* USER CODE END 4 */
 
@@ -795,64 +797,34 @@ void StartAttachmentTest(void *argument)
 {
   /* USER CODE BEGIN StartAttachmentTest */
   /* Infinite loop */
-  uint8_t temp;
+  uint8_t transmit = 0;
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
   // We want the last thing to be transmitted to be 0x00 so when theres no
   // buttons being pressed the last thing sent is 0
   bool holding = false;
   for (;;)
   {
-    temp = 0;
+    transmit = 0;
     // Get the PS2Data Mutex
     osMutexWait(mPS2DataHandle, 10);
 
-    // Clear the X Pressed bit
-    temp &= 0b11111110;
-    // If the X is pressed set the X Pressed Bit
-    if (Is_Button_Pressed(&ps2, X))
-    {
-      temp |= 0b00000001;
-    }
+    transmit = ((Is_Button_Pressed(&ps2, X) << 0) |
+                (Is_Button_Pressed(&ps2, CIRCLE) << 1) |
+                (Is_Button_Pressed(&ps2, SQUARE) << 2) |
+                (Is_Button_Pressed(&ps2, TRIANGLE) << 3) |
+                (Is_DPad_Pressed(&ps2, DUP) << 4) |
+                (Is_DPad_Pressed(&ps2, DDOWN) << 5) |
+                (Is_DPad_Pressed(&ps2, DLEFT) << 6) |
+                (Is_DPad_Pressed(&ps2, DRIGHT) << 7));
 
-    // Clear the Circle Pressed bit
-    temp &= 0b11111101;
-    // If the Circle is pressed set the Circle Pressed Bit
-    if (Is_Button_Pressed(&ps2, CIRCLE))
+    if (transmit != 0)
     {
-      temp |= 0b00000010;
-    }
-
-    // Clear the Triangle Pressed bit
-    temp &= 0b11111011;
-    // If the Triangle is pressed set the Triangle Pressed Bit
-    if (Is_Button_Pressed(&ps2, TRIANGLE))
-    {
-      temp |= 0b00000100;
-    }
-
-    // Clear the Square Pressed bit
-    temp &= 0b11110111;
-    // If the Square is pressed set the Square Pressed Bit
-    if (Is_Button_Pressed(&ps2, SQUARE))
-    {
-      temp |= 0b00001000;
-    }
-
-    if (temp != 0)
-    {
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-      HAL_SPI_Transmit(&hspi3, &temp, 1, 50);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-      holding = true;
-    }
-    else if (holding == true)
-    {
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-      HAL_SPI_Transmit(&hspi3, &temp, 1, 50);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-      holding = false;
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+      HAL_SPI_Transmit(&hspi3, (uint8_t *)&transmit, 1, 1);
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
     }
     osMutexRelease(mPS2DataHandle);
-    osDelay(10);
+    osDelay(1);
   }
   /* USER CODE END StartAttachmentTest */
 }
