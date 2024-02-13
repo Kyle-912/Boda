@@ -304,7 +304,7 @@ void move(arm* arm, uint8_t to_coord)
 
     // reset rpms
     // void set_rpm(stepper *motor, float rpm)
-    for (int i = 0; i < MAX_MOTORS; i++)
+    for (int i = 0; i < arm->num_motors; i++)
     {
         set_rpm(arm->motors[i], arm->rpm);
     }
