@@ -33,6 +33,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 // Motor 1
 #define motor1_dir_port GPIOC
 #define motor1_dir_pin GPIO_PIN_8
@@ -56,6 +57,7 @@
 #define motor3_step_pin GPIO_PIN_13
 #define motor3_sleep_port GPIOC
 #define motor3_sleep_pin GPIO_PIN_14
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -64,11 +66,13 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+
 #define map_range(value, in_min, in_max, out_min, out_max) \
   (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
 
 #define low_rpm 50
 #define high_rpm 300
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -122,6 +126,7 @@ osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
     .name = "mPS2Data"};
 /* USER CODE BEGIN PV */
+
 PS2ControllerHandler ps2;
 float rpm = 300;
 short microsteps = FULL_STEPS;
@@ -131,6 +136,7 @@ stepper *motor1 = NULL;
 stepper *motor2 = NULL;
 stepper *motor3 = NULL;
 stepper *motor4 = NULL;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -150,7 +156,9 @@ void StartStepperMotor3(void *argument);
 void StartAttachmentTest(void *argument);
 
 /* USER CODE BEGIN PFP */
+
 void PS2_Init(PS2ControllerHandler *ps2);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -193,6 +201,7 @@ int main(void)
   MX_SPI3_Init();
   MX_TIM13_Init();
   /* USER CODE BEGIN 2 */
+
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
   // Enable TIM3 global Interrupt & set priority
@@ -620,6 +629,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
@@ -660,6 +670,7 @@ void PS2_Init(PS2ControllerHandler *ps2)
   ps2->tim = &htim1;
   HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
 }
+
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartPS2DataUpdate */
@@ -684,6 +695,7 @@ void StartPS2DataUpdate(void *argument)
     osDelay(25U);
   }
   // Return the PS2Data Mutex
+
   /* USER CODE END 5 */
 }
 
@@ -747,6 +759,7 @@ void StartStepperMotor1(void *argument)
     osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
+
   /* USER CODE END StartStepperMotor1 */
 }
 
@@ -810,6 +823,7 @@ void StartStepperMotor2(void *argument)
     osMutexRelease(mPS2DataHandle);
     osDelay(10);
   }
+
   /* USER CODE END StartStepperMotor2 */
 }
 
@@ -839,6 +853,7 @@ void StartStepperMotor3(void *argument)
   {
     osDelay(1);
   }
+
   /* USER CODE END StartStepperMotor3 */
 }
 
@@ -852,6 +867,7 @@ void StartStepperMotor3(void *argument)
 void StartAttachmentTest(void *argument)
 {
   /* USER CODE BEGIN StartAttachmentTest */
+
   /* Infinite loop */
   uint8_t transmit = 0;
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
@@ -882,6 +898,7 @@ void StartAttachmentTest(void *argument)
     osMutexRelease(mPS2DataHandle);
     osDelay(1);
   }
+  
   /* USER CODE END StartAttachmentTest */
 }
 
