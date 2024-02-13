@@ -33,9 +33,29 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef int bool; // Define a custom boolean type
-#define true 1    // Define true as 1
-#define false 0   // Define false as 0
+// Motor 1
+#define motor1_dir_port GPIOC
+#define motor1_dir_pin GPIO_PIN_8
+#define motor1_step_port GPIOC
+#define motor1_step_pin GPIO_PIN_6
+#define motor1_sleep_port GPIOC
+#define motor1_sleep_pin GPIO_PIN_5
+
+// Motor 2
+#define motor2_dir_port GPIOA
+#define motor2_dir_pin GPIO_PIN_6
+#define motor2_step_port GPIOA
+#define motor2_step_pin GPIO_PIN_7
+#define motor2_sleep_port GPIOB
+#define motor2_sleep_pin GPIO_PIN_6
+
+// Motor 3
+#define motor3_dir_port GPIOB
+#define motor3_dir_pin GPIO_PIN_7
+#define motor3_step_port GPIOC
+#define motor3_step_pin GPIO_PIN_13
+#define motor3_sleep_port GPIOC
+#define motor3_sleep_pin GPIO_PIN_14
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -47,8 +67,8 @@ typedef int bool; // Define a custom boolean type
 #define map_range(value, in_min, in_max, out_min, out_max) \
   (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
 
-#define low_rpm 25
-#define high_rpm 50
+#define low_rpm 50
+#define high_rpm 300
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -102,7 +122,15 @@ osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
     .name = "mPS2Data"};
 /* USER CODE BEGIN PV */
-
+PS2ControllerHandler ps2;
+float rpm = 300;
+short microsteps = FULL_STEPS;
+double deg = 20;
+const short spr = 200; // Steps per revolution
+stepper *motor1 = NULL;
+stepper *motor2 = NULL;
+stepper *motor3 = NULL;
+stepper *motor4 = NULL;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,20 +150,7 @@ void StartStepperMotor3(void *argument);
 void StartAttachmentTest(void *argument);
 
 /* USER CODE BEGIN PFP */
-
 void PS2_Init(PS2ControllerHandler *ps2);
-
-PS2ControllerHandler ps2;
-
-float rpm = 300;
-short microsteps = FULL_STEPS;
-double deg = 20;
-const short spr = 200; // Steps per revolution
-
-stepper *motor1 = NULL;
-stepper *motor2 = NULL;
-stepper *motor3 = NULL;
-stepper *motor4 = NULL;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -183,10 +198,6 @@ int main(void)
   // Enable TIM3 global Interrupt & set priority
   HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM3_IRQn);
-
-  //----------STEPPER VARIABLES----------//
-
-  //---------STEPPER INIT-----------//
 
   //----------PS2 INIT----------//
   PS2_Init(&ps2);
@@ -612,21 +623,30 @@ static void MX_GPIO_Init(void)
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+  stepper *current_motor = NULL;
+
+  // Determine which motor's timer has elapsed
   if (htim->Instance == motor1->timer->Instance)
+    current_motor = motor1;
+  else if (htim->Instance == motor2->timer->Instance)
+    current_motor = motor2;
+  else if (htim->Instance == motor3->timer->Instance)
+    current_motor = motor3;
+  // Add conditions for motor3 and motor4 if needed
+
+  if (current_motor)
   {
-    pulse_stepper(motor1);
-  }
-  if (htim->Instance == motor2->timer->Instance)
-  {
-    pulse_stepper(motor2);
-  }
-  if (htim->Instance == motor3->timer->Instance)
-  {
-    pulse_stepper(motor3);
-  }
-  if (htim->Instance == motor4->timer->Instance)
-  {
-    pulse_stepper(motor4);
+    pulse_stepper_sinusoid(current_motor);
+
+    // Adjust the step_pulse based on the sinusoidal profile for the next step
+    // This requires a function that calculates the delay for the next step
+    // based on the current step number and the sinusoidal profile
+    // if (current_motor->steps_remaining > 0) {
+    //     calculate_next_sinusoidal_pulse(current_motor);
+    //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
+    //     // RESET timer
+    //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
+    // }
   }
 }
 
@@ -678,16 +698,16 @@ void StartStepperMotor1(void *argument)
 {
   /* USER CODE BEGIN StartStepperMotor1 */
 
-  //----------Stepper Init----------//
+  // Motor 1
   stepper stepper_motor;
   motor1 = &stepper_motor;
-  init_stepper(&stepper_motor, spr);
-  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_10);
-  init_step_pin(&stepper_motor, GPIOB, GPIO_PIN_8);
-  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_5);
-  set_micro_en(&stepper_motor, 0);
-  set_timer(&stepper_motor, &htim3);
-  set_rpm(&stepper_motor, rpm);
+  init_stepper(motor1, spr);
+  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
+  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
+  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
+  set_micro_en(motor1, 0);
+  set_timer(motor1, &htim3);
+  set_rpm(motor1, rpm);
 
   //----------Task Variables----------//
   char *messageR = "Left Stick Moved Right\r\n";
@@ -741,16 +761,16 @@ void StartStepperMotor2(void *argument)
 {
   /* USER CODE BEGIN StartStepperMotor2 */
 
-  //----------Stepper Init----------//
+  // Motor 2
   stepper stepper_motor;
   motor2 = &stepper_motor;
-  init_stepper(&stepper_motor, spr);
-  init_dir_pin(&stepper_motor, GPIOA, GPIO_PIN_9);
-  init_step_pin(&stepper_motor, GPIOA, GPIO_PIN_8);
-  init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_4);
-  set_micro_en(&stepper_motor, 0);
-  set_timer(&stepper_motor, &htim13);
-  set_rpm(&stepper_motor, rpm);
+  init_stepper(motor2, spr);
+  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
+  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
+  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
+  set_micro_en(motor2, 0);
+  set_timer(motor2, &htim14);
+  set_rpm(motor2, rpm);
 
   //----------Task Variables----------//
   char *messageU = "Left Stick Moved Up\r\n";
@@ -803,6 +823,17 @@ void StartStepperMotor2(void *argument)
 void StartStepperMotor3(void *argument)
 {
   /* USER CODE BEGIN StartStepperMotor3 */
+
+  // Motor 3
+  stepper stepper_motor;
+  motor3 = &stepper_motor;
+  init_stepper(motor3, spr);
+  init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
+  init_step_pin(motor3, motor3_step_port, motor3_step_pin);
+  init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
+  set_micro_en(motor3, 0);
+  set_timer(motor3, &htim13);
+  set_rpm(motor3, rpm);
   /* Infinite loop */
   for (;;)
   {
