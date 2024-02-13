@@ -758,7 +758,7 @@ void StartStepperMotor2(void *argument)
   init_step_pin(&stepper_motor, GPIOA, GPIO_PIN_8);
   init_sleep_pin(&stepper_motor, GPIOB, GPIO_PIN_4);
   set_micro_en(&stepper_motor, 0);
-  set_timer(&stepper_motor, &htim14);
+  set_timer(&stepper_motor, &htim13);
   set_rpm(&stepper_motor, rpm);
 
   //----------Task Variables----------//
