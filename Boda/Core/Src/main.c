@@ -93,31 +93,24 @@ const osThreadAttr_t PS2DataUpdate_attributes = {
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityHigh,
 };
-/* Definitions for StepperMotor1 */
-osThreadId_t StepperMotor1Handle;
-const osThreadAttr_t StepperMotor1_attributes = {
-    .name = "StepperMotor1",
+/* Definitions for RobotArm */
+osThreadId_t RobotArmHandle;
+const osThreadAttr_t RobotArm_attributes = {
+    .name = "RobotArm",
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
-/* Definitions for StepperMotor2 */
-osThreadId_t StepperMotor2Handle;
-const osThreadAttr_t StepperMotor2_attributes = {
-    .name = "StepperMotor2",
+/* Definitions for Attachment */
+osThreadId_t AttachmentHandle;
+const osThreadAttr_t Attachment_attributes = {
+    .name = "Attachment",
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
-/* Definitions for StepperMotor3 */
-osThreadId_t StepperMotor3Handle;
-const osThreadAttr_t StepperMotor3_attributes = {
-    .name = "StepperMotor3",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-/* Definitions for AttachmentTest */
-osThreadId_t AttachmentTestHandle;
-const osThreadAttr_t AttachmentTest_attributes = {
-    .name = "AttachmentTest",
+/* Definitions for Bluetooth */
+osThreadId_t BluetoothHandle;
+const osThreadAttr_t Bluetooth_attributes = {
+    .name = "Bluetooth",
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
@@ -125,6 +118,10 @@ const osThreadAttr_t AttachmentTest_attributes = {
 osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
     .name = "mPS2Data"};
+/* Definitions for mAttachmentData */
+osMutexId_t mAttachmentDataHandle;
+const osMutexAttr_t mAttachmentData_attributes = {
+    .name = "mAttachmentData"};
 /* USER CODE BEGIN PV */
 
 PS2ControllerHandler ps2;
@@ -150,10 +147,9 @@ static void MX_TIM14_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM13_Init(void);
 void StartPS2DataUpdate(void *argument);
-void StartStepperMotor1(void *argument);
-void StartStepperMotor2(void *argument);
-void StartStepperMotor3(void *argument);
-void StartAttachmentTest(void *argument);
+void StartRobotArm(void *argument);
+void StartAttachment(void *argument);
+void StartBluetooth(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -219,6 +215,9 @@ int main(void)
   /* creation of mPS2Data */
   mPS2DataHandle = osMutexNew(&mPS2Data_attributes);
 
+  /* creation of mAttachmentData */
+  mAttachmentDataHandle = osMutexNew(&mAttachmentData_attributes);
+
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -239,17 +238,14 @@ int main(void)
   /* creation of PS2DataUpdate */
   PS2DataUpdateHandle = osThreadNew(StartPS2DataUpdate, NULL, &PS2DataUpdate_attributes);
 
-  /* creation of StepperMotor1 */
-  StepperMotor1Handle = osThreadNew(StartStepperMotor1, NULL, &StepperMotor1_attributes);
+  /* creation of RobotArm */
+  RobotArmHandle = osThreadNew(StartRobotArm, NULL, &RobotArm_attributes);
 
-  /* creation of StepperMotor2 */
-  StepperMotor2Handle = osThreadNew(StartStepperMotor2, NULL, &StepperMotor2_attributes);
+  /* creation of Attachment */
+  AttachmentHandle = osThreadNew(StartAttachment, NULL, &Attachment_attributes);
 
-  /* creation of StepperMotor3 */
-  StepperMotor3Handle = osThreadNew(StartStepperMotor3, NULL, &StepperMotor3_attributes);
-
-  /* creation of AttachmentTest */
-  AttachmentTestHandle = osThreadNew(StartAttachmentTest, NULL, &AttachmentTest_attributes);
+  /* creation of Bluetooth */
+  BluetoothHandle = osThreadNew(StartBluetooth, NULL, &Bluetooth_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -699,20 +695,20 @@ void StartPS2DataUpdate(void *argument)
   /* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_StartStepperMotor1 */
+/* USER CODE BEGIN Header_StartRobotArm */
 /**
- * @brief Function implementing the StepperMotor1 thread.
+ * @brief Function implementing the RobotArm thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartStepperMotor1 */
-void StartStepperMotor1(void *argument)
+/* USER CODE END Header_StartRobotArm */
+void StartRobotArm(void *argument)
 {
-  /* USER CODE BEGIN StartStepperMotor1 */
+  /* USER CODE BEGIN StartRobotArm */
 
   // Motor 1
-  stepper stepper_motor;
-  motor1 = &stepper_motor;
+  stepper stepper_motor_1;
+  motor1 = &stepper_motor_1;
   init_stepper(motor1, spr);
   init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
   init_step_pin(motor1, motor1_step_port, motor1_step_pin);
@@ -721,62 +717,9 @@ void StartStepperMotor1(void *argument)
   set_timer(motor1, &htim3);
   set_rpm(motor1, rpm);
 
-  //----------Task Variables----------//
-  char *messageR = "Left Stick Moved Right\r\n";
-  char *messageL = "Left Stick Moved Left\r\n";
-  double mapped_left = 0;
-  uint8_t left_val;
-
-  /* Infinite loop */
-  for (;;)
-  {
-    osMutexWait(mPS2DataHandle, 50);
-    // get the current value of the joystick left right
-    left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
-
-    // evaluate joystick status
-    if (left_val != NEUTRAL)
-    {
-      if (left_val < NEUTRAL)
-      {
-        set_dir_state(&stepper_motor, 1);
-        mapped_left = map_range(left_val, 127, 0, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
-      }
-      else
-      {
-        set_dir_state(&stepper_motor, 0);
-        mapped_left = map_range(left_val, 127, 255, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
-      }
-      set_rpm(&stepper_motor, mapped_left);
-      // If the joystick is moved move the motor
-      if (!stepper_motor.steps_remaining)
-      {
-        move_stepper_deg(&stepper_motor, deg);
-      }
-    }
-    osMutexRelease(mPS2DataHandle);
-    osDelay(10);
-  }
-
-  /* USER CODE END StartStepperMotor1 */
-}
-
-/* USER CODE BEGIN Header_StartStepperMotor2 */
-/**
- * @brief Function implementing the StepperMotor2 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartStepperMotor2 */
-void StartStepperMotor2(void *argument)
-{
-  /* USER CODE BEGIN StartStepperMotor2 */
-
   // Motor 2
-  stepper stepper_motor;
-  motor2 = &stepper_motor;
+  stepper stepper_motor_2;
+  motor2 = &stepper_motor_2;
   init_stepper(motor2, spr);
   init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
   init_step_pin(motor2, motor2_step_port, motor2_step_pin);
@@ -785,62 +728,9 @@ void StartStepperMotor2(void *argument)
   set_timer(motor2, &htim14);
   set_rpm(motor2, rpm);
 
-  //----------Task Variables----------//
-  char *messageU = "Left Stick Moved Up\r\n";
-  char *messageD = "Left Stick Moved Down\r\n";
-  double mapped_up = 0;
-  uint8_t up_val;
-
-  /* Infinite loop */
-  for (;;)
-  {
-    osMutexWait(mPS2DataHandle, 50);
-    // get the current value of the joystick up down
-    up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
-
-    // evaluate joystick status
-    if (up_val != NEUTRAL)
-    {
-      if (up_val < NEUTRAL)
-      {
-        set_dir_state(&stepper_motor, 1);
-        mapped_up = map_range(up_val, 127, 0, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
-      }
-      else
-      {
-        set_dir_state(&stepper_motor, 0);
-        mapped_up = map_range(up_val, 127, 255, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
-      }
-      set_rpm(&stepper_motor, mapped_up);
-      // If the joystick is moved move the motor
-      if (!stepper_motor.steps_remaining)
-      {
-        move_stepper_deg(&stepper_motor, deg);
-      }
-    }
-    osMutexRelease(mPS2DataHandle);
-    osDelay(10);
-  }
-
-  /* USER CODE END StartStepperMotor2 */
-}
-
-/* USER CODE BEGIN Header_StartStepperMotor3 */
-/**
- * @brief Function implementing the StepperMotor3 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartStepperMotor3 */
-void StartStepperMotor3(void *argument)
-{
-  /* USER CODE BEGIN StartStepperMotor3 */
-
-  // Motor 3
-  stepper stepper_motor;
-  motor3 = &stepper_motor;
+  // Motor 2
+  stepper stepper_motor_3;
+  motor3 = &stepper_motor_3;
   init_stepper(motor3, spr);
   init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
   init_step_pin(motor3, motor3_step_port, motor3_step_pin);
@@ -848,26 +738,75 @@ void StartStepperMotor3(void *argument)
   set_micro_en(motor3, 0);
   set_timer(motor3, &htim13);
   set_rpm(motor3, rpm);
+
+  double mapped_left = 0;
+  double mapped_up = 0;
+
+  arm robot_arm_var;
+  arm *robot_arm = &robot_arm_var;
+  // init_arm_2(robot_arm, 200.0f, motor1, motor2);
+  init_arm(robot_arm, 200.0, 3, motor1, motor2, motor3);
+
+  home(robot_arm);
+
+  // set_coordinate(robot_arm, 0, 10, 10);
+  set_coordinate(robot_arm, 0, 3, 2 * 80, 2 * 80, 2 * 80);
+  set_coordinate(robot_arm, 1, 3, 120 * 80, 200 * 80, 160 * 80);
+  set_coordinate(robot_arm, 2, 3, 30 * 80, 60 * 80, 45 * 80);
+  uint8_t coord = 0;
+  uint8_t rpm_step = 12;
+
+  int8_t flip = 1;
+
   /* Infinite loop */
   for (;;)
   {
-    osDelay(1);
-  }
+    // osMutexWait(mPS2DataHandle, 10);
 
-  /* USER CODE END StartStepperMotor3 */
+    // if (coord == 0)
+    // {
+    //   set_arm_rpm(robot_arm, 450);
+    //   move(robot_arm, 0);
+    //   coord = 1;
+    // }
+    // else if (coord == 1)
+    // {
+    //   set_arm_rpm(robot_arm, 450);
+    //   move(robot_arm, 1);
+    //   coord = 2;
+    // }
+    // else if (coord == 2)
+    // {
+    //   set_arm_rpm(robot_arm, 450);
+    //   move(robot_arm, 2);
+    //   coord = 0;
+    // }
+    // // else if (coord == 3)
+    // // {
+    // //   set_arm_rpm(robot_arm, 100);
+    // //   move(robot_arm, 3);
+    // //   coord = 0;
+    // // }
+
+    // while (motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining)
+    //   ;
+
+    // osMutexRelease(mPS2DataHandle);
+    // osDelay(1);
+  }
+  /* USER CODE END StartRobotArm */
 }
 
-/* USER CODE BEGIN Header_StartAttachmentTest */
+/* USER CODE BEGIN Header_StartAttachment */
 /**
- * @brief Function implementing the AttachmentTest thread.
+ * @brief Function implementing the Attachment thread.
  * @param argument: Not used
  * @retval None
  */
-/* USER CODE END Header_StartAttachmentTest */
-void StartAttachmentTest(void *argument)
+/* USER CODE END Header_StartAttachment */
+void StartAttachment(void *argument)
 {
-  /* USER CODE BEGIN StartAttachmentTest */
-
+  /* USER CODE BEGIN StartAttachment */
   /* Infinite loop */
   uint8_t transmit = 0;
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
@@ -897,9 +836,26 @@ void StartAttachmentTest(void *argument)
     }
     osMutexRelease(mPS2DataHandle);
     osDelay(1);
+    /* USER CODE END StartAttachment */
   }
-  
-  /* USER CODE END StartAttachmentTest */
+}
+
+/* USER CODE BEGIN Header_StartBluetooth */
+/**
+ * @brief Function implementing the Bluetooth thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartBluetooth */
+void StartBluetooth(void *argument)
+{
+  /* USER CODE BEGIN StartBluetooth */
+  /* Infinite loop */
+  for (;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartBluetooth */
 }
 
 /**

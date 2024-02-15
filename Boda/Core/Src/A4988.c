@@ -436,9 +436,9 @@ void calculate_next_sinusoidal_pulse(stepper *motor) {
 // Function to pre-calculate ramp-up RPM values
 void precalculate_ramp_values(stepper *motor) {
     for (int i = 0; i < RAMP_STEPS; i++) {
-        float normalized_step = ((float)i / RAMP_STEPS) * M_PI;
-        float ramp_up_value = sin(normalized_step - M_PI) + normalized_step;
-        motor->rpm_values[i] = fmax((ramp_up_value / M_PI) * motor->peak_rpm, motor->min_rpm);
+        float normalized_step = ((float)i / RAMP_STEPS) * PI;
+        float ramp_up_value = sin(normalized_step - PI) + normalized_step;
+        motor->rpm_values[i] = fmax((ramp_up_value / PI) * motor->peak_rpm, motor->min_rpm);
     }
     asm("nop");
 }
