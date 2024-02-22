@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 
 class ControllerPage extends StatefulWidget {
@@ -53,11 +55,11 @@ class _ControllerPageState extends State<ControllerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Controller Page'),
+        title: Text('Main Controller'),
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(10.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -66,15 +68,18 @@ class _ControllerPageState extends State<ControllerPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Text('Speed',
+                      style: TextStyle(fontSize: 16, 
+                      fontWeight: FontWeight.bold)),
                     _buildSlider(_sliderValue1, (newValue) {
                       setState(() => _sliderValue1 = newValue);
-                    }),
+                    }, "Base"),
                     _buildSlider(_sliderValue2, (newValue) {
                       setState(() => _sliderValue2 = newValue);
-                    }),
+                    }, "Shoulder"),
                     _buildSlider(_sliderValue3, (newValue) {
                       setState(() => _sliderValue3 = newValue);
-                    }),
+                    }, "Elbow"),
                   ],
                 ),
               ),
@@ -83,9 +88,22 @@ class _ControllerPageState extends State<ControllerPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildVerticalControls(_incrementCounter, _decrementCounter, _counter.toString()),
-                    _buildHorizontalControls(_decrementThirdCounter, _incrementThirdCounter, _thirdCounter.toString()),
-                    _buildVerticalControls(_incrementSecondCounter, _decrementSecondCounter, _secondCounter.toString()),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20), // Add padding to space it out from the other controls
+                      child: _buildStopButton(),
+                    ),
+                    _buildVerticalControls(
+                      _incrementCounter, 
+                      _decrementCounter, 
+                      _counter.toString()),
+                    _buildHorizontalControls(
+                      _decrementThirdCounter,
+                      _incrementThirdCounter, 
+                      _thirdCounter.toString()),
+                    _buildVerticalControls(
+                      _incrementSecondCounter,
+                       _decrementSecondCounter,
+                      _secondCounter.toString()),
                   ],
                 ),
               ),
@@ -96,16 +114,40 @@ class _ControllerPageState extends State<ControllerPage> {
     );
   }
 
-  Widget _buildSlider(double value, ValueChanged<double> onChanged) {
-    return Slider(
-      value: value,
-      min: 0,
-      max: 100,
-      divisions: 100,
-      label: value.round().toString(),
-      onChanged: onChanged,
+Widget _buildStopButton() {
+  return ElevatedButton(
+    onPressed: () {} ,
+    style: ElevatedButton.styleFrom(
+      shape: CircleBorder(), 
+      padding: EdgeInsets.all(20), 
+    ),
+    child: Icon(Icons.stop), 
+  );
+}
+
+ Widget _buildSlider(double value, ValueChanged<double> onChanged, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start, // Align children to the start of the cross axis
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+          children: [
+            Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
+          ],
+        ),
+        Slider(
+          value: value,
+          min: 0, // Minimum value set to 0 RPM
+          max: 450, // Maximum value set to 450 RPM
+          divisions: 450, 
+          label: '${value.round()} RPM', // Display the value in RPM
+          onChanged: onChanged,
+        )
+      ],
     );
   }
+
 
   Widget _buildHorizontalControls(VoidCallback onIncrementThird, VoidCallback onDecrementThird, String thirdCounterValue) {
   return Row(
