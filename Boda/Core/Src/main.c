@@ -345,8 +345,7 @@ int main(void)
     //   coord = 0;
     // }
 
-    while (motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining)
-      ;
+    while (motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining);
 
     HAL_Delay(2000);
 

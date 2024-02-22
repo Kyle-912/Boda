@@ -52,6 +52,8 @@ void move_rpm(arm* arm, uint8_t to_coord, float rpm);
 // callback for timer period handled by arm driver
 void callback_pulse(arm* arm, TIM_HandleTypeDef *htim);
 
+bool arm_moving(arm* arm);
+
 // Assuming these functions are defined elsewhere in your project
 // void init_sinusoidal_vars(int16_t steps, float rpm, double rise_time, stepper* motor);
 // void HAL_GPIO_WritePin(void* port, int pin, int state);

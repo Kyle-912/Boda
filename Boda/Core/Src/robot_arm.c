@@ -278,3 +278,19 @@ void callback_pulse(arm* arm, TIM_HandleTypeDef *htim)
         }
     }
 }
+
+bool arm_moving(arm* arm)
+{
+    // For Each Motor in Arm
+    for (int i = 0; i < arm->num_motors; i++)
+    {
+        // If arm is moving
+        if (arm->motors[i]->steps_remaining)
+        {
+            // Return true
+            return true;
+        }
+    }
+    // If all arms arent moving, return false
+    return false;
+}
