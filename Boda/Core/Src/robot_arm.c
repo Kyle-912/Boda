@@ -66,6 +66,8 @@ void init_arm(arm* arm, float rpm_, int num_motors, ...) {
     arm->num_motors = num_motors; // Set the number of motors
     arm->rpm = rpm_; // Initialize RPM
     arm->num_coords = 0; // Initialize the number of coordinates
+
+    arm->is_jogging = false;
     
     // Initialize motor pointers
     for (int i = 0; i < num_motors; i++) {
@@ -186,65 +188,6 @@ void adjust_motors_sinusoidal_gen(float rpm, arm* arm, uint8_t coord, double ris
     }
 }
 
-// void adjust_motors_sinusoidal(float rpm, arm* arm, uint8_t coord, double rise_time) {
-
-//     int16_t delta_steps_1 = arm->coordinates[coord].m1 - arm->motors[0]->step_count;
-//     int16_t delta_steps_2 = arm->coordinates[coord].m2 - arm->motors[1]->step_count;
-
-//     // Calculate movement times and synchronize RPMs
-//     float longest_time = fmax(
-//         fabs(delta_steps_1 * 1.8) / (rpm * 6),
-//         fabs(delta_steps_2 * 1.8) / (rpm * 6)
-//     );
-
-//     float m1_rpm = (fabs(delta_steps_1) * 1.8) / (longest_time * 6);
-//     float m2_rpm = (fabs(delta_steps_2) * 1.8) / (longest_time * 6);
-
-//     double temp_rpm_1 = m1_rpm;
-//     double temp_rpm_2 = m2_rpm;
-
-//     // Initialize sinusoidal movement for each motor
-
-//     // if (arm->motors[0]->sinusoidal_ramp)
-//     // {
-//     //     init_sinusoidal_vars(abs(delta_steps_1), temp_rpm_1 * 1.0f, rise_time, arm->motors[0]);
-//     // }
-//     // else
-//     // {
-
-//     // }
-
-//     // if (arm->motors[1]->sinusoidal_ramp)
-//     // {
-//     //     init_sinusoidal_vars(abs(delta_steps_2), temp_rpm_2 * 1.0f, rise_time, arm->motors[1]);
-//     // }
-//     // else
-//     // {
-
-//     // }
-
-//     init_sinusoidal_vars(abs(delta_steps_1), temp_rpm_1 * 1.0f, rise_time, arm->motors[0]);
-//     init_sinusoidal_vars(abs(delta_steps_2), temp_rpm_2 * 1.0f, rise_time, arm->motors[1]);
-
-//     // Set the direction and steps remaining for each motor
-//     arm->motors[0]->dir_state = (delta_steps_1 < 0) ? 1 : 0;
-//     arm->motors[1]->dir_state = (delta_steps_2 < 0) ? 1 : 0;
-//     arm->motors[0]->steps_remaining = abs(delta_steps_1);
-//     arm->motors[1]->steps_remaining = abs(delta_steps_2);
-
-//     // Set sleep output HIGH
-//     HAL_GPIO_WritePin(arm->motors[0]->sleep_port, arm->motors[0]->sleep_pin, SET);
-//     HAL_GPIO_WritePin(arm->motors[1]->sleep_port, arm->motors[1]->sleep_pin, SET);
-
-//     // Output DIR state
-//     HAL_GPIO_WritePin(arm->motors[0]->dir_port, arm->motors[0]->dir_pin, arm->motors[0]->dir_state);
-//     HAL_GPIO_WritePin(arm->motors[1]->dir_port, arm->motors[1]->dir_pin, arm->motors[1]->dir_state);
-
-//     // Start the timer for each motor
-//     HAL_TIM_Base_Start_IT(arm->motors[0]->timer);
-//     HAL_TIM_Base_Start_IT(arm->motors[1]->timer);
-// }
-
 
 void set_arm_rpm(arm* arm, float rpm_)
 {
@@ -294,18 +237,44 @@ void save_coordinate(arm* arm) {
 }
 
 
-
+// Movement Between Set Points
 void move(arm* arm, uint8_t to_coord)
 {   
+    // Adjust motors using sinusoidal ramping up/down
     adjust_motors_sinusoidal_gen(arm->rpm, arm, to_coord, 4.0);
-    // adjust_motors_sinusoidal(arm->rpm, arm, to_coord, 4.0);
+}
 
-    // adjust_motors(arm->rpm, arm, to_coord);
+// Movement Between Set Points with RPM as a parameter
+void move_rpm(arm* arm, uint8_t to_coord, float rpm)
+{   
+    // Adjust motors using sinusoidal ramping up/down
+    adjust_motors_sinusoidal_gen(rpm, arm, to_coord, 4.0);
+}
 
-    // reset rpms
-    // void set_rpm(stepper *motor, float rpm)
+
+// period callback function handled by arm driver
+void callback_pulse(arm* arm, TIM_HandleTypeDef *htim)
+{
+    // Check if timer is from a motor timer
     for (int i = 0; i < arm->num_motors; i++)
     {
-        set_rpm(arm->motors[i], arm->rpm);
+        // if timer is from a motor timer
+        if (htim->Instance == arm->motors[i]->timer->Instance)
+        {
+            // if jogging, pulse differently
+            if (arm->is_jogging)
+            {
+                // Movement can be instant while jogging, dependent on user-set RPM
+                pulse_stepper(arm->motors[i]);
+            }
+            // if moving between points, sinusoidal pulse
+            else
+            {
+                pulse_stepper_sinusoid(arm->motors[i]);
+            }
+
+            // break the loop to not check other motor timers
+            return;
+        }
     }
 }
