@@ -252,7 +252,7 @@ void move_rpm(arm* arm, uint8_t to_coord, float rpm)
 }
 
 
-// 
+// period callback function handled by arm driver
 void callback_pulse(arm* arm, TIM_HandleTypeDef *htim)
 {
     // Check if timer is from a motor timer

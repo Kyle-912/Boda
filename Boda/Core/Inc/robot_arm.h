@@ -44,9 +44,13 @@ void set_coordinate(arm* arm, uint8_t coord_index, int num_motors, ...);
 // Deletes the last saved coordinate of the arm.
 void del_coordinate(arm* arm);
 
-// Moves the arm to a specified coordinate.
+// Moves the arm to a specified coordinate with arm->rpm
 void move(arm* arm, uint8_t to_coord);
+// Moves the arm to a specified coordinate with specified rpm
+void move_rpm(arm* arm, uint8_t to_coord, float rpm);
 
+// callback for timer period handled by arm driver
+void callback_pulse(arm* arm, TIM_HandleTypeDef *htim);
 
 // Assuming these functions are defined elsewhere in your project
 // void init_sinusoidal_vars(int16_t steps, float rpm, double rise_time, stepper* motor);
