@@ -1,4 +1,5 @@
 #include "stm32f4xx_hal.h"
+#include <stdbool.h>
 
 #ifndef PS2_CONTROLLER_H
 #define PS2_CONTROLLER_H
