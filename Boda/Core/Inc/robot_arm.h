@@ -17,6 +17,7 @@ typedef struct {
     uint8_t num_coords; // Number of coordinates
     uint8_t num_motors; // Number of motors
     float rpm; // Rotations per minute
+    bool is_jogging; // Boolean for Arm Jogging
     Coordinate coordinates[MAX_COORDINATES]; // Array of coordinates
 } arm;
 

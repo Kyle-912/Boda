@@ -32,7 +32,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-// Motor 1 
+// Motor 1
 #define motor1_dir_port GPIOC
 #define motor1_dir_pin GPIO_PIN_8
 #define motor1_step_port GPIOC
@@ -40,7 +40,7 @@
 #define motor1_sleep_port GPIOC
 #define motor1_sleep_pin GPIO_PIN_5
 
-// Motor 2 
+// Motor 2
 #define motor2_dir_port GPIOA
 #define motor2_dir_pin GPIO_PIN_6
 #define motor2_step_port GPIOA
@@ -68,7 +68,7 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define map_range(value, in_min, in_max, out_min, out_max) \
-    (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
+  (((value) - (in_min)) * ((out_max) - (out_min)) / ((in_max) - (in_min)) + (out_min))
 
 #define low_rpm 50
 #define high_rpm 300
@@ -91,6 +91,8 @@ stepper *motor1 = NULL;
 stepper *motor2 = NULL;
 stepper *motor3 = NULL;
 stepper *motor4 = NULL;
+
+arm *robot_arm;
 
 PS2ControllerHandler ps2;
 
@@ -115,9 +117,9 @@ void PS2_Init(PS2ControllerHandler *ps2);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -172,7 +174,7 @@ int main(void)
   double deg = 20;
   const short spr = 200; // Steps per revolution
 
-  // Motor 1 
+  // Motor 1
   stepper stepper_motor_1;
   motor1 = &stepper_motor_1;
   init_stepper(motor1, spr);
@@ -183,7 +185,7 @@ int main(void)
   set_timer(motor1, &htim3);
   set_rpm(motor1, rpm);
 
-  // Motor 2 
+  // Motor 2
   stepper stepper_motor_2;
   motor2 = &stepper_motor_2;
   init_stepper(motor2, spr);
@@ -194,7 +196,7 @@ int main(void)
   set_timer(motor2, &htim14);
   set_rpm(motor2, rpm);
 
-  // Motor 2 
+  // Motor 3
   stepper stepper_motor_3;
   motor3 = &stepper_motor_3;
   init_stepper(motor3, spr);
@@ -208,17 +210,17 @@ int main(void)
   double mapped_left = 0;
   double mapped_up = 0;
 
-  arm robot_arm_var;
-  arm* robot_arm = &robot_arm_var;
   // init_arm_2(robot_arm, 200.0f, motor1, motor2);
+  arm robot_arm_var;
+  robot_arm = &robot_arm_var;
   init_arm(robot_arm, 200.0, 3, motor1, motor2, motor3);
 
   home(robot_arm);
 
   // set_coordinate(robot_arm, 0, 10, 10);
-  set_coordinate(robot_arm, 0, 3, 2*80, 2*80, 2*80);
-  set_coordinate(robot_arm, 1, 3, 120*80, 200*80, 160*80);
-  set_coordinate(robot_arm, 2, 3, 30*80, 60*80, 45*80);
+  set_coordinate(robot_arm, 0, 3, 2 * 80, 2 * 80, 2 * 80);
+  set_coordinate(robot_arm, 1, 3, 120 * 80, 200 * 80, 160 * 80);
+  set_coordinate(robot_arm, 2, 3, 30 * 80, 60 * 80, 45 * 80);
   uint8_t coord = 0;
   uint8_t rpm_step = 12;
 
@@ -226,7 +228,6 @@ int main(void)
   while (1)
   {
     // PS2_Update(&ps2);
-
 
     // --------------------------------- MOTOR 2 GRADUAL INC
     // if (Is_Button_Pressed(&ps2, X))
@@ -261,7 +262,6 @@ int main(void)
     // }
     // ---------------------------------------------- MOTOR INC / DEC
 
-
     // ---------------------------------------------- MOVE BETWEEN POINTS
     // if (coord == 0)
     // {
@@ -288,7 +288,6 @@ int main(void)
     //   coord = 0;
     // }
     // ---------------------------------------------- MOVE BETWEEN POINTS
-
 
     // if (Is_Button_Pressed(&ps2, X))
     // {
@@ -346,11 +345,10 @@ int main(void)
     //   coord = 0;
     // }
 
-    while(motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining);
+    while (motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining)
+      ;
 
     HAL_Delay(2000);
-
-
 
     // move_stepper_steps(motor1, 30, 200);
     // move_stepper_steps(motor2, 30, 200);
@@ -360,12 +358,10 @@ int main(void)
 
     // HAL_Delay(2000);
 
-
     // PS2_Update(&ps2);
 
     // uint8_t left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
     // uint8_t up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
-
 
     // if (left_val != NEUTRAL)
     // {
@@ -374,7 +370,7 @@ int main(void)
     //     set_dir_state(motor1, 1);
     //     mapped_left = map_range(left_val, 0, 126, low_rpm, high_rpm);
     //   }
-    //   else 
+    //   else
     //   {
     //     set_dir_state(motor1, 0);
     //     mapped_left = map_range(left_val, 128, 255, low_rpm, high_rpm);
@@ -395,7 +391,7 @@ int main(void)
     //     set_dir_state(motor2, 1);
     //     mapped_up = map_range(up_val, 0, 126, low_rpm, high_rpm);
     //   }
-    //   else 
+    //   else
     //   {
     //     set_dir_state(motor2, 0);
     //     mapped_up = map_range(up_val, 128, 255, low_rpm, high_rpm);
@@ -430,22 +426,22 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-  */
+   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+   * in the RCC_OscInitTypeDef structure.
+   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -462,9 +458,8 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+   */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -477,10 +472,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief SPI2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief SPI2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_SPI2_Init(void)
 {
 
@@ -511,14 +506,13 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
-
 }
 
 /**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM1 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM1_Init(void)
 {
 
@@ -533,7 +527,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 72-1;
+  htim1.Init.Prescaler = 72 - 1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -557,14 +551,13 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
-
 }
 
 /**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM3 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM3_Init(void)
 {
 
@@ -602,14 +595,13 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-
 }
 
 /**
-  * @brief TIM13 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM13 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM13_Init(void)
 {
 
@@ -633,14 +625,13 @@ static void MX_TIM13_Init(void)
   /* USER CODE BEGIN TIM13_Init 2 */
 
   /* USER CODE END TIM13_Init 2 */
-
 }
 
 /**
-  * @brief TIM14 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief TIM14 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_TIM14_Init(void)
 {
 
@@ -664,14 +655,13 @@ static void MX_TIM14_Init(void)
   /* USER CODE BEGIN TIM14_Init 2 */
 
   /* USER CODE END TIM14_Init 2 */
-
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -697,19 +687,18 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+ * @brief GPIO Initialization Function
+ * @param None
+ * @retval None
+ */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -718,21 +707,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
-                          |GPIO_PIN_9|GPIO_PIN_10, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LD2_Pin | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_7|GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PC13 PC14 PC5 PC6
                            PC8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_8;
+  GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -740,8 +725,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : LD2_Pin PA6 PA7 PA8
                            PA9 PA10 */
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
-                          |GPIO_PIN_9|GPIO_PIN_10;
+  GPIO_InitStruct.Pin = LD2_Pin | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -749,15 +733,14 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PB12 PB4 PB5 PB6
                            PB7 PB8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_7|GPIO_PIN_8;
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -772,28 +755,31 @@ static void MX_GPIO_Init(void)
 //   else if (htim->Instance == motor4->timer->Instance) pulse_stepper(motor4);
 // }
 
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    stepper *current_motor = NULL;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  // stepper *current_motor = NULL;
 
-    // Determine which motor's timer has elapsed
-    if (htim->Instance == motor1->timer->Instance) current_motor = motor1;
-    else if (htim->Instance == motor2->timer->Instance) current_motor = motor2;
-    else if (htim->Instance == motor3->timer->Instance) current_motor = motor3;
-    // Add conditions for motor3 and motor4 if needed
+  // // Determine which motor's timer has elapsed
+  // if (htim->Instance == motor1->timer->Instance) current_motor = motor1;
+  // else if (htim->Instance == motor2->timer->Instance) current_motor = motor2;
+  // else if (htim->Instance == motor3->timer->Instance) current_motor = motor3;
+  // // Add conditions for motor3 and motor4 if needed
 
-    if (current_motor) {
-        pulse_stepper_sinusoid(current_motor);
+  // if (current_motor) {
 
-        // Adjust the step_pulse based on the sinusoidal profile for the next step
-        // This requires a function that calculates the delay for the next step
-        // based on the current step number and the sinusoidal profile
-        // if (current_motor->steps_remaining > 0) {
-        //     calculate_next_sinusoidal_pulse(current_motor);
-        //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
-        //     // RESET timer
-        //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
-        // }
-    }
+  //     pulse_stepper_sinusoid(current_motor);
+
+  //     // Adjust the step_pulse based on the sinusoidal profile for the next step
+  //     // This requires a function that calculates the delay for the next step
+  //     // based on the current step number and the sinusoidal profile
+  //     // if (current_motor->steps_remaining > 0) {
+  //     //     calculate_next_sinusoidal_pulse(current_motor);
+  //     //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
+  //     //     // RESET timer
+  //     //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
+  //     // }
+  // }
+  callback_pulse(robot_arm, htim);
 }
 
 // void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
@@ -807,8 +793,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 //     // Add similar else-if blocks for other motors (motor3, motor4, etc.) if needed
 // }
 
-
-
 void PS2_Init(PS2ControllerHandler *ps2)
 {
   ps2->GPIO = GPIO_PIN_12;
@@ -821,9 +805,9 @@ void PS2_Init(PS2ControllerHandler *ps2)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -835,14 +819,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
