@@ -343,9 +343,9 @@ int main(void)
     //   set_arm_rpm(robot_arm, 100);
     //   move(robot_arm, 3);
     //   coord = 0;
-    // }
+    // }  
 
-    while (motor1->steps_remaining || motor2->steps_remaining || motor3->steps_remaining);
+    while (arm_moving(robot_arm));
 
     HAL_Delay(2000);
 
