@@ -53,61 +53,82 @@ class _ControllerPageState extends State<ControllerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
+    final EdgeInsets safePadding = MediaQuery.of(context).padding;
     return Scaffold(
       appBar: AppBar(
         title: Text('Main Controller'),
       ),
-      body: Center(
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Left Column for Sliders
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Speed',
-                      style: TextStyle(fontSize: 16, 
-                      fontWeight: FontWeight.bold)),
-                    _buildSlider(_sliderValue1, (newValue) {
-                      setState(() => _sliderValue1 = newValue);
-                    }, "Base"),
-                    _buildSlider(_sliderValue2, (newValue) {
-                      setState(() => _sliderValue2 = newValue);
-                    }, "Shoulder"),
-                    _buildSlider(_sliderValue3, (newValue) {
-                      setState(() => _sliderValue3 = newValue);
-                    }, "Elbow"),
-                  ],
-                ),
-              ),
-              // Right Column for Counters and Buttons
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 20), // Add padding to space it out from the other controls
-                      child: _buildStopButton(),
+          // Apply padding to respect system UI elements
+          padding: EdgeInsets.only(top: safePadding.top, bottom: safePadding.bottom),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Left Column for Sliders
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text('Speed',
+                          style: TextStyle(fontSize: 14, 
+                          fontWeight: FontWeight.bold)),
+                        _buildSlider(_sliderValue1, (newValue) {
+                          setState(() => _sliderValue1 = newValue);
+                        }, "Shoulder - V"),
+                        _buildSlider(_sliderValue2, (newValue) {
+                          setState(() => _sliderValue2 = newValue);
+                        }, "Shoulder - R"),
+                        _buildSlider(_sliderValue3, (newValue) {
+                          setState(() => _sliderValue3 = newValue);
+                        }, "Elbow"),
+                      ],
                     ),
-                    _buildVerticalControls(
-                      _incrementCounter, 
-                      _decrementCounter, 
-                      _counter.toString()),
-                    _buildHorizontalControls(
-                      _decrementThirdCounter,
-                      _incrementThirdCounter, 
-                      _thirdCounter.toString()),
-                    _buildVerticalControls(
-                      _incrementSecondCounter,
-                       _decrementSecondCounter,
-                      _secondCounter.toString()),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0), // Adjust based on your design needs
+                          child: _buildStopButton(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Right Column for Counters and Buttons
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text('Movement',
+                          style: TextStyle(fontSize: 14, 
+                          fontWeight: FontWeight.bold)),
+                        _buildVerticalControls(
+                          _incrementCounter, 
+                          _decrementCounter, 
+                          _counter.toString(),
+                          "Shoulder - V"),
+                        _buildHorizontalControls(
+                          _decrementThirdCounter,
+                          _incrementThirdCounter, 
+                          _thirdCounter.toString(),
+                          "Shoulder - R"),
+                        _buildVerticalControls(
+                          _incrementSecondCounter,
+                          _decrementSecondCounter,
+                          _secondCounter.toString(),
+                          "Elbow"),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -149,43 +170,66 @@ Widget _buildStopButton() {
   }
 
 
-  Widget _buildHorizontalControls(VoidCallback onIncrementThird, VoidCallback onDecrementThird, String thirdCounterValue) {
-  return Row(
+  Widget _buildHorizontalControls(VoidCallback onIncrementThird, VoidCallback onDecrementThird, String thirdCounterValue, String label) {
+  return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      ElevatedButton(
-        onPressed: onIncrementThird, 
-        child: Icon(Icons.arrow_left),
+      Row(
+          mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+          children: [
+            Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
+          ],
       ),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Text(thirdCounterValue),
-      ),
-      ElevatedButton(
-        onPressed: onDecrementThird, 
-        child: Icon(Icons.arrow_right),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: onIncrementThird, 
+            child: Icon(Icons.arrow_left),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(thirdCounterValue),
+          ),
+          ElevatedButton(
+            onPressed: onDecrementThird, 
+            child: Icon(Icons.arrow_right),
+          ),
+        ]
       ),
     ],
   );
 }
 
 
-  Widget _buildVerticalControls(VoidCallback onIncrement, VoidCallback onDecrement, String counterValue) {
-    return Row(
+  Widget _buildVerticalControls(VoidCallback onIncrement, VoidCallback onDecrement, String counterValue, String label) {
+    return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        ElevatedButton(
-          onPressed: onIncrement,
-          child: Icon(Icons.arrow_upward),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+          children: [
+            Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text(counterValue),
-        ),
-        ElevatedButton(
-          onPressed: onDecrement,
-          child: Icon(Icons.arrow_downward),
-        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: onIncrement,
+              child: Icon(Icons.arrow_upward),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(counterValue),
+            ),
+            ElevatedButton(
+              onPressed: onDecrement,
+              child: Icon(Icons.arrow_downward),
+            ),
+
+          ],
+        )
       ],
     );
   }
