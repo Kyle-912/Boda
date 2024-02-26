@@ -9,31 +9,31 @@ class AttachmentWrapper extends StatefulWidget {
 class _AttachmentWrapperState extends State<AttachmentWrapper> {
   @override
   Widget build(BuildContext context) {
-    // Choose the widget based on the current UI type
-    Widget child;
-    switch (currentUIType) {
-      case UIType.typeA:
-        child = _buildTypeAUI();
-        break;
-      case UIType.typeB:
-        child = _buildTypeBUI();
-        break;
-      case UIType.typeC:
-        child = _buildTypeCUI();
-        break;
-      default:
-        child = _buildDefaultUI();
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Attachment Controller'),
       ),
       body: Center(
-        child: child,
+        child: ValueListenableBuilder<UIType>(
+          valueListenable: currentUITypeNotifier,
+          builder: (context, value, child) {
+            switch (value) {
+              case UIType.typeA:
+                return _buildTypeAUI();
+              case UIType.typeB:
+                return _buildTypeBUI();
+              case UIType.typeC:
+                return _buildTypeCUI();
+              default:
+                return _buildDefaultUI();
+            }
+          },
+        ),
       ),
     );
   }
+
+}
 
   Widget _buildTypeAUI() {
     return Column(
@@ -86,4 +86,3 @@ class _AttachmentWrapperState extends State<AttachmentWrapper> {
       ],
     );
   }
-}

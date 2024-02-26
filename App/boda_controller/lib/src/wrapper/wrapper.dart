@@ -1,10 +1,12 @@
 
 import 'package:boda_controller/src/attachments/attachments.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boda_controller/src/nav/nav.dart';
 import 'package:boda_controller/src/controller/controller.dart';
 import 'package:boda_controller/src/teach/teach.dart';
 import 'package:boda_controller/src/log/log.dart';
+import 'package:boda_controller/src/connect/connect.dart';
 
 
 class AppWrapper extends StatefulWidget {
@@ -27,6 +29,7 @@ class _AppWrapperState extends State<AppWrapper> {
     AttachmentWrapper(),
     TeachPage(),
     LogPage(),
+    ConnectPage(),
   ];
 
   void _onItemTapped(int index) {

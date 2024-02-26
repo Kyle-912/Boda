@@ -1,139 +1,304 @@
 // ignore_for_file: prefer_const_constructors
-
+import 'dart:async';
+import 'package:boda_controller/src/ble/ble_device_connector.dart';
+import 'package:boda_controller/src/ble/ble_logger.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:provider/provider.dart';
+import 'package:boda_controller/src/globals.dart';
 
-class ControllerPage extends StatefulWidget {
+
+
+class ControllerPage extends StatelessWidget {
+  const ControllerPage({Key? key}) : super(key: key);
+
   @override
-  _ControllerPageState createState() => _ControllerPageState();
+  Widget build(BuildContext context) =>
+      Consumer4<FlutterReactiveBle,BleDeviceConnector, ConnectionStateUpdate, BleLogger>(
+        builder: (_, ble, deviceConnector, connectionStateUpdate, bleLogger, __) => _Controller(
+          ble: ble,
+          bleConnector: deviceConnector,
+          bleUpdate: connectionStateUpdate,
+          bleLogger: bleLogger,
+        ),
+      );
 }
 
-class _ControllerPageState extends State<ControllerPage> {
-  int _counter = 0; // Initial counter value
-  int _secondCounter = 0; // Second counter value
-  int _thirdCounter = 0; // Third counter value
-  double _sliderValue1 = 0; // Initial slider value
-  double _sliderValue2 = 0; // Initial slider value
-  double _sliderValue3 = 0; // Initial slider value
+class _Controller extends StatefulWidget {
+    const _Controller({
+      required this.ble,
+      required this.bleConnector,
+      required this.bleUpdate,
+      required this.bleLogger,
+    });
 
-  void _incrementCounter() {
+    final FlutterReactiveBle ble;
+    final BleDeviceConnector bleConnector;
+    final ConnectionStateUpdate bleUpdate;
+    final BleLogger bleLogger;
+  @override
+  _ControllerState createState() => _ControllerState();
+}
+
+class _ControllerState extends State<_Controller> {
+  Uuid serviceUuId = Uuid.parse('ffe0');
+  Uuid charUuId = Uuid.parse('ffe1');
+
+  late Timer _statusTimer; 
+  String _statusString = '';
+  String _bleMsg = '';
+  String _bleRes = '';
+
+  bool _shoulderVerticalUp = false;
+  bool _shoulderVerticalDown = false;
+
+  bool _shoulderRotationClockwise = false;
+  bool _shoulderRotationCounterClockwise = false;
+  
+  bool _elbowUp = false;
+  bool _elbowDown = false;
+
+  double _shoulderVertical = 1.0; // Initial slider value
+  double _shoulderRotation = 1.0; // Initial slider value
+  double _elbowVertical = 1.0; // Initial slider value
+
+  // Method to toggle shoulder vertical up
+  void _toggleShoulderVerticalUp() {
     setState(() {
-      _counter++; // Increment first counter
+      _shoulderVerticalUp = !_shoulderVerticalUp;
+    });
+    // print("SVU: $_shoulderVerticalUp");
+  }
+
+  // Method to toggle shoulder vertical down
+  void _toggleShoulderVerticalDown() {
+    setState(() {
+      _shoulderVerticalDown = !_shoulderVerticalDown;
+    });
+    // print("SVD: $_shoulderVerticalDown");
+  }
+
+  // Method to toggle shoulder rotation clockwise
+  void _toggleShoulderRotationClockwise() {
+    setState(() {
+      _shoulderRotationClockwise = !_shoulderRotationClockwise;
     });
   }
 
-  void _decrementCounter() {
+  // Method to toggle shoulder rotation counter-clockwise
+  void _toggleShoulderRotationCounterClockwise() {
     setState(() {
-      if (_counter > 0) _counter--; // Decrement first counter 
+      _shoulderRotationCounterClockwise = !_shoulderRotationCounterClockwise;
     });
   }
 
-  void _incrementSecondCounter() {
+  // Method to toggle elbow up
+  void _toggleElbowUp() {
     setState(() {
-      _secondCounter++; // Increment second counter
+      _elbowUp =  !_elbowUp;
+    });
+    // print("ED: ${_elbowUp}");
+  }
+
+  // Method to toggle elbow down
+  void _toggleElbowDown() {
+    setState(() {
+      _elbowDown = !_elbowDown;
     });
   }
 
-  void _decrementSecondCounter() {
-    setState(() {
-      if (_secondCounter > 0) _secondCounter--; // Decrement second counter 
+  void _updateBleMsg(){
+    if(widget.bleUpdate.connectionState == DeviceConnectionState.connected) {
+      _bleMsg = '';
+      _bleMsg += _shoulderVerticalUp == true ? "U" : 
+                _shoulderVerticalDown == true ? "D" : 
+                "N";
+      _bleMsg += String.fromCharCode(_shoulderVertical.toInt());
+      _bleMsg += _shoulderRotationClockwise == true ? "F" : 
+                _shoulderRotation == true ? "B" : 
+                "N";
+      _bleMsg += String.fromCharCode(_shoulderRotation.toInt());
+      _bleMsg += _elbowUp== true ? "F" : 
+                _elbowDown == true ? "B" : 
+                "N";
+      _bleMsg += String.fromCharCode(_elbowVertical.toInt());
+      _bleMsg += String.fromCharCode(0);
+      _bleMsg += String.fromCharCode(13);
+      _bleMsg += String.fromCharCode(10);
+      // print(_bleMsg);
+      // print(_bleMsg.codeUnits);
+    }
+  }
+
+  void _sendBleMsg(){
+    if(widget.bleUpdate.connectionState == DeviceConnectionState.connected){
+      // send the data
+      final characteristic = QualifiedCharacteristic(serviceId: serviceUuId, characteristicId: charUuId, deviceId: connectedDeviceId); 
+      widget.ble.writeCharacteristicWithoutResponse(characteristic, value: _bleMsg.codeUnits);
+    }
+  }
+
+  void _updateStatusString() {
+    if(widget.bleUpdate.connectionState == DeviceConnectionState.connected) {
+      _statusString = '\nSVU: $_shoulderVerticalUp, \n'
+                      'SVD: $_shoulderVerticalDown, \n'
+                      'SRC: $_shoulderRotationClockwise, \n'
+                      'SRCC: $_shoulderRotationCounterClockwise, \n'
+                      'EU: $_elbowUp, \n'
+                      'ED: $_elbowDown, \n'
+                      'Slider1: ${_shoulderVertical.toStringAsFixed(2)}, \n'
+                      'Slider2: ${_shoulderRotation.toStringAsFixed(2)}, \n'
+                      'Slider3: ${_elbowVertical.toStringAsFixed(2)} \n';
+      _updateBleMsg();
+      _sendBleMsg();
+      // print(_statusString);
+    }
+  }
+
+  void readBodaResponse(dynamic data) {
+    
+    String text = String.fromCharCodes(data);
+    print(text[0]);
+    if (text[0] == 'A'){
+      currentUITypeNotifier.value = UIType.typeA;
+    } else if (text[0] == 'B'){
+      currentUITypeNotifier.value = UIType.typeB;
+    } else if (text[0] == 'C'){
+      currentUITypeNotifier.value = UIType.typeC;
+    } else {
+      currentUITypeNotifier.value = UIType.typeDefault;
+    }
+
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _statusTimer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+      _updateStatusString();
     });
   }
 
-  void _incrementThirdCounter() {
-    setState(() {
-      _thirdCounter++; // Increment first counter
-    });
-  }
-
-  void _decrementThirdCounter() {
-    setState(() {
-      _thirdCounter--; // Decrement first counter
-    });
+  @override
+  void dispose() {
+    _statusTimer.cancel(); // Cancel the timer when the widget is disposed
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-    final EdgeInsets safePadding = MediaQuery.of(context).padding;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Main Controller'),
-      ),
-      body: SafeArea(
-        child: Padding(
-          // Apply padding to respect system UI elements
-          padding: EdgeInsets.only(top: safePadding.top, bottom: safePadding.bottom),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Left Column for Sliders
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text('Speed',
-                          style: TextStyle(fontSize: 14, 
-                          fontWeight: FontWeight.bold)),
-                        _buildSlider(_sliderValue1, (newValue) {
-                          setState(() => _sliderValue1 = newValue);
-                        }, "Shoulder - V"),
-                        _buildSlider(_sliderValue2, (newValue) {
-                          setState(() => _sliderValue2 = newValue);
-                        }, "Shoulder - R"),
-                        _buildSlider(_sliderValue3, (newValue) {
-                          setState(() => _sliderValue3 = newValue);
-                        }, "Elbow"),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0), // Adjust based on your design needs
-                          child: _buildStopButton(),
+  final isConnected = widget.bleUpdate.connectionState == DeviceConnectionState.connected;
+  if(isConnected){
+    final characteristic = QualifiedCharacteristic(serviceId: serviceUuId, characteristicId: charUuId, deviceId: connectedDeviceId);
+    widget.ble.subscribeToCharacteristic(characteristic).listen((data) {
+      readBodaResponse(data);
+    }, onError: (dynamic error) {
+    });
+  } 
+  
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Main Controller'),
+    ),
+    body: SafeArea(
+      child: Stack(
+        children: [
+          IgnorePointer(
+            ignoring: !isConnected, // Ignore interactions when not connected
+            child:             Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(5.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Left Column for Sliders
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text('Speed',
+                              style: TextStyle(fontSize: 14, 
+                              fontWeight: FontWeight.bold)),
+                            _buildSlider(_shoulderVertical, (newValue) {
+                              setState(() => _shoulderVertical = newValue);
+                            }, "Shoulder - V"),
+                            _buildSlider(_shoulderRotation, (newValue) {
+                              setState(() => _shoulderRotation = newValue);
+                            }, "Shoulder - R"),
+                            _buildSlider(_elbowVertical, (newValue) {
+                              setState(() => _elbowVertical = newValue);
+                            }, "Elbow"),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0), // Adjust based on your design needs
+                              child: _buildStopButton(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Right Column for Counters and Buttons
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text('Movement',
+                              style: TextStyle(fontSize: 14, 
+                              fontWeight: FontWeight.bold)),
+                            _buildVerticalControls(
+                              _toggleShoulderVerticalUp, 
+                              _toggleShoulderVerticalDown, 
+                              ' ',
+                              "Shoulder - V"),
+                            _buildHorizontalControls(
+                              _toggleShoulderRotationCounterClockwise,
+                              _toggleShoulderRotationClockwise, 
+                             ' ',
+                              "Shoulder - R"),
+                            _buildVerticalControls(
+                              _toggleElbowUp,
+                              _toggleElbowDown,
+                              ' ',
+                              "Elbow"),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  // Right Column for Counters and Buttons
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text('Movement',
-                          style: TextStyle(fontSize: 14, 
-                          fontWeight: FontWeight.bold)),
-                        _buildVerticalControls(
-                          _incrementCounter, 
-                          _decrementCounter, 
-                          _counter.toString(),
-                          "Shoulder - V"),
-                        _buildHorizontalControls(
-                          _decrementThirdCounter,
-                          _incrementThirdCounter, 
-                          _thirdCounter.toString(),
-                          "Shoulder - R"),
-                        _buildVerticalControls(
-                          _incrementSecondCounter,
-                          _decrementSecondCounter,
-                          _secondCounter.toString(),
-                          "Elbow"),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+          Visibility(
+            visible: !isConnected, // Show the overlay when NOT connected
+            child: Container(
+              width: MediaQuery.of(context).size.width, 
+              height: MediaQuery.of(context).size.height, 
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.all(20),
+                  color: Colors.red, // Red banner background
+                  child: Text(
+                    'You must connect to an arm before continuing',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
 Widget _buildStopButton() {
   return ElevatedButton(
@@ -159,10 +324,10 @@ Widget _buildStopButton() {
         ),
         Slider(
           value: value,
-          min: 0, // Minimum value set to 0 RPM
-          max: 450, // Maximum value set to 450 RPM
-          divisions: 450, 
-          label: '${value.round()} RPM', // Display the value in RPM
+          min: 1, // Minimum value set to 0 RPM
+          max: 255, // Maximum value set to 450 RPM
+          divisions: 255, 
+          label: '${(value/ 255 * 450).floor()} RPM', // Display the value in RPM
           onChanged: onChanged,
         )
       ],
@@ -170,67 +335,83 @@ Widget _buildStopButton() {
   }
 
 
-  Widget _buildHorizontalControls(VoidCallback onIncrementThird, VoidCallback onDecrementThird, String thirdCounterValue, String label) {
+  Widget _buildHorizontalControls(VoidCallback toggleCCW, VoidCallback toggleCW, String thirdCounterValue, String label) {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       Row(
-          mainAxisAlignment: MainAxisAlignment.start, // Align to the left
-          children: [
-            Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
-          ],
+        mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+        children: [
+          Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
+        ],
       ),
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
-            onPressed: onIncrementThird, 
-            child: Icon(Icons.arrow_left),
+          Listener(
+            onPointerDown: (_) { toggleCCW();},
+            onPointerUp: (_) { toggleCCW();},
+            child: ElevatedButton(
+              onPressed: () {}, 
+              child: Icon(Icons.arrow_left),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(thirdCounterValue),
           ),
-          ElevatedButton(
-            onPressed: onDecrementThird, 
-            child: Icon(Icons.arrow_right),
+          Listener(
+            onPointerDown: (_) { toggleCW();},
+            onPointerUp: (_) { toggleCW();},
+            child: ElevatedButton(
+              onPressed: () {},
+              child: Icon(Icons.arrow_right),
+            ),
           ),
-        ]
+        ],
       ),
     ],
   );
 }
 
-
-  Widget _buildVerticalControls(VoidCallback onIncrement, VoidCallback onDecrement, String counterValue, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start, // Align to the left
-          children: [
-            Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: onIncrement,
+  Widget _buildVerticalControls(VoidCallback toggleUp, VoidCallback toggleDown, String counterValue, String label) {
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start, // Align to the left
+        children: [
+          Text(label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.normal)), // Slider Label
+        ],
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Listener(
+            onPointerDown: (_) => toggleUp(),
+            onPointerUp: (_) => toggleUp(),
+            child: ElevatedButton(
+              onPressed: () {}, // You might keep this empty if the button press is fully handled by the Listener
               child: Icon(Icons.arrow_upward),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(counterValue),
-            ),
-            ElevatedButton(
-              onPressed: onDecrement,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(counterValue),
+          ),
+          Listener(
+            onPointerDown: (_) => toggleDown(),
+            onPointerUp: (_) => toggleDown(),
+            child: ElevatedButton(
+              onPressed: () {}, 
               child: Icon(Icons.arrow_downward),
             ),
+          ),
+        ],
+      )
+    ],
+  );
+}
 
-          ],
-        )
-      ],
-    );
-  }
+
 }

@@ -14,6 +14,7 @@ class MyBottomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Atachment'),
         BottomNavigationBarItem(icon: Icon(Icons.design_services), label: 'Teach'),
         BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Logs'),
+        BottomNavigationBarItem(icon: Icon(Icons.bluetooth), label: 'Connect'),
       ],
       currentIndex: selectedIndex,
       selectedItemColor: Theme.of(context).colorScheme.secondary,

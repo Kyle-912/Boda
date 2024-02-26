@@ -1,3 +1,8 @@
 // Global variable to control the UI type
-enum UIType { typeA, typeB, typeC }
-UIType currentUIType = UIType.typeA;
+import 'package:flutter/material.dart';
+
+enum UIType { typeA, typeB, typeC, typeDefault }
+ValueNotifier<UIType> currentUITypeNotifier = ValueNotifier<UIType>(UIType.typeDefault);
+
+String connectedDeviceId = '';
+
