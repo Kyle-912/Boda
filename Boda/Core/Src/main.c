@@ -369,11 +369,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -707,56 +707,56 @@ void StartRobotArm(void *argument)
   /* USER CODE BEGIN StartRobotArm */
 
   // Motor 1
-  stepper stepper_motor_1;
-  motor1 = &stepper_motor_1;
-  init_stepper(motor1, spr);
-  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
-  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
-  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
-  set_micro_en(motor1, 0);
-  set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
+  // stepper stepper_motor_1;
+  // motor1 = &stepper_motor_1;
+  // init_stepper(motor1, spr);
+  // init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
+  // init_step_pin(motor1, motor1_step_port, motor1_step_pin);
+  // init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
+  // set_micro_en(motor1, 0);
+  // set_timer(motor1, &htim3);
+  // set_rpm(motor1, rpm);
 
-  // Motor 2
-  stepper stepper_motor_2;
-  motor2 = &stepper_motor_2;
-  init_stepper(motor2, spr);
-  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
-  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
-  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
-  set_micro_en(motor2, 0);
-  set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
+  // // Motor 2
+  // stepper stepper_motor_2;
+  // motor2 = &stepper_motor_2;
+  // init_stepper(motor2, spr);
+  // init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
+  // init_step_pin(motor2, motor2_step_port, motor2_step_pin);
+  // init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
+  // set_micro_en(motor2, 0);
+  // set_timer(motor2, &htim14);
+  // set_rpm(motor2, rpm);
 
-  // Motor 2
-  stepper stepper_motor_3;
-  motor3 = &stepper_motor_3;
-  init_stepper(motor3, spr);
-  init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
-  init_step_pin(motor3, motor3_step_port, motor3_step_pin);
-  init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
-  set_micro_en(motor3, 0);
-  set_timer(motor3, &htim13);
-  set_rpm(motor3, rpm);
+  // // Motor 2
+  // stepper stepper_motor_3;
+  // motor3 = &stepper_motor_3;
+  // init_stepper(motor3, spr);
+  // init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
+  // init_step_pin(motor3, motor3_step_port, motor3_step_pin);
+  // init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
+  // set_micro_en(motor3, 0);
+  // set_timer(motor3, &htim13);
+  // set_rpm(motor3, rpm);
 
-  double mapped_left = 0;
-  double mapped_up = 0;
+  // double mapped_left = 0;
+  // double mapped_up = 0;
 
-  arm robot_arm_var;
-  arm *robot_arm = &robot_arm_var;
-  // init_arm_2(robot_arm, 200.0f, motor1, motor2);
-  init_arm(robot_arm, 200.0, 3, motor1, motor2, motor3);
+  // arm robot_arm_var;
+  // arm *robot_arm = &robot_arm_var;
+  // // init_arm_2(robot_arm, 200.0f, motor1, motor2);
+  // init_arm(robot_arm, 200.0, 3, motor1, motor2, motor3);
 
-  home(robot_arm);
+  // home(robot_arm);
 
-  // set_coordinate(robot_arm, 0, 10, 10);
-  set_coordinate(robot_arm, 0, 3, 2 * 80, 2 * 80, 2 * 80);
-  set_coordinate(robot_arm, 1, 3, 120 * 80, 200 * 80, 160 * 80);
-  set_coordinate(robot_arm, 2, 3, 30 * 80, 60 * 80, 45 * 80);
-  uint8_t coord = 0;
-  uint8_t rpm_step = 12;
+  // // set_coordinate(robot_arm, 0, 10, 10);
+  // set_coordinate(robot_arm, 0, 3, 2 * 80, 2 * 80, 2 * 80);
+  // set_coordinate(robot_arm, 1, 3, 120 * 80, 200 * 80, 160 * 80);
+  // set_coordinate(robot_arm, 2, 3, 30 * 80, 60 * 80, 45 * 80);
+  // uint8_t coord = 0;
+  // uint8_t rpm_step = 12;
 
-  int8_t flip = 1;
+  // int8_t flip = 1;
 
   /* Infinite loop */
   for (;;)
@@ -807,37 +807,294 @@ void StartRobotArm(void *argument)
 void StartAttachment(void *argument)
 {
   /* USER CODE BEGIN StartAttachment */
+
+  /*****
+   * TODO:
+   *  - Enum the states of the commection protocol
+   *    - Wait :
+   *        > While the received SPI transmission is 0 send command 0x64
+   *    - Conntecting :
+   *        > After a response is received for the first time, ask for the buttons it would like to use as inputs
+   *        > Will be 8 transmissions, one for each button? or 4 with two buttons being sent at the same time.
+   *    - Input:
+   *        > Will now send SPI transactions every milisecond to get the WHO_AM_I response
+   *        > IF nothing is received -> go to the disconnected state
+   *        > If there is something to transmit, go to command or input
+   *    - Disconnected:
+   *        > Any memory stuff to make sure it recognizes that it isnt connected anymore
+   */
+
   /* Infinite loop */
-  uint8_t transmit = 0;
+  uint16_t transmit = 0;
+  uint16_t received = 0;
+  uint8_t lowByte;
+  uint8_t highByte;
+  uint8_t command = 0x64;
+  uint8_t connectionConfirm = 0;
+
+  enum States
+  {
+    Wait,
+    Identify,
+    Connecting,
+    Input,
+    Disconnected
+  };
+
+  enum States curState = Wait;
+
+  uint8_t buttons[8] = {R1, R2, L1, L2, X, CIRCLE, SQUARE, TRIANGLE};
+  uint8_t buttonsBuffer[9] = {0, 0, 0, 0, 0, 0, 0, 0, '\n'};
+  uint8_t buffer[3] = {0, 0, '\n'};
+  uint8_t buttonsGotten = 0;
+
+  bool awaitResponse = false;
+  uint8_t commandDelay = 0;
+  uint8_t baseDelay = 3;
+
+  uint8_t temp = 0;
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-  // We want the last thing to be transmitted to be 0x00 so when theres no
-  // buttons being pressed the last thing sent is 0
-  bool holding = false;
+
   for (;;)
   {
     transmit = 0;
-    // Get the PS2Data Mutex
-    osMutexWait(mPS2DataHandle, 10);
 
-    transmit = ((Is_Button_Pressed(&ps2, X) << 0) |
-                (Is_Button_Pressed(&ps2, CIRCLE) << 1) |
-                (Is_Button_Pressed(&ps2, SQUARE) << 2) |
-                (Is_Button_Pressed(&ps2, TRIANGLE) << 3) |
-                (Is_DPad_Pressed(&ps2, DUP) << 4) |
-                (Is_DPad_Pressed(&ps2, DDOWN) << 5) |
-                (Is_DPad_Pressed(&ps2, DLEFT) << 6) |
-                (Is_DPad_Pressed(&ps2, DRIGHT) << 7));
-
-    if (transmit != 0)
+    // Set the proper commmand settings for the current state
+    if (awaitResponse == false)
     {
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-      HAL_SPI_Transmit(&hspi3, (uint8_t *)&transmit, 1, 1);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+      switch (curState)
+      {
+      case Wait:
+        // always waiting for a response with no delay: Waiting for 0x01 received
+        command = 0;
+        awaitResponse = true;
+        commandDelay = 0;
+        buttonsGotten = 0;
+        break;
+      case Identify:
+        command = 0x64;
+        commandDelay = baseDelay;
+        awaitResponse = true;
+        buttonsGotten = 0;
+        break;
+      case Connecting:
+        if (buttonsGotten == 0)
+        {
+          command = 0x01;
+        }
+        else if (buttonsGotten == 2)
+        {
+          command = 0x02;
+        }
+        else if (buttonsGotten == 4)
+        {
+          command = 0x03;
+        }
+        else if (buttonsGotten == 6)
+        {
+          command = 0x04;
+        }
+        commandDelay = baseDelay;
+        awaitResponse = true;
+        break;
+      case Input:
+        command = 0;
+        commandDelay = 0;
+        awaitResponse = false;
+        // Get the PS2Data Mutex
+        osMutexWait(mPS2DataHandle, 10);
+        for (int i = 0; i < 8; i++)
+        {
+          transmit |= (Is_Button_Pressed(&ps2, buttons[i]) << i);
+        }
+        // The mutex can be released here as it is no longer needed to be held. Helps free up time
+        osMutexRelease(mPS2DataHandle);
+        break;
+      case Disconnected:
+        // send the emergency response command
+        command = 0x0E;
+        awaitResponse = true;
+        commandDelay = baseDelay;
+        break;
+      default:
+        break;
+      }
     }
-    osMutexRelease(mPS2DataHandle);
+
+    transmit |= ((uint16_t)(command) << 8);
+    // Transmit the Input, Send Command
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
+    HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)&transmit, (uint8_t *)&received, 1, 1);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+
+    // check for Disconnection, receiving 0 is always bad:
+    if (received == 0 && curState != Wait && curState != Disconnected)
+    {
+      curState = Disconnected;
+      awaitResponse = false;
+    }
+    // if a command is waiting for a response, and there is still a delay, decrease the delay
+    else if (awaitResponse == true && commandDelay > 0)
+    {
+      commandDelay--;
+    }
+    // Whether or not a response is waiting to be received, though if one is, the delay is over
+    else
+    {
+      // check/change states
+      switch (curState)
+      {
+      case Wait:
+        // if the 0x01 we wanted is received:
+        if (received == 0x01)
+        {
+          curState = Identify;
+        }
+
+        break;
+      case Identify:
+        // if response is valid?
+        if (received != 0x01)
+        {
+          curState = Connecting;
+
+          temp = (uint8_t)(received & 0xFF);
+          received = (received >> 8);
+          received |= ((uint16_t)temp << 8);
+          HAL_UART_Transmit(&huart2, "\nID: ", 6, 1);
+          HAL_UART_Transmit(&huart2, (uint8_t *)&received, 2, 1);
+          HAL_UART_Transmit(&huart2, "\n", 1, 1);
+        }
+        else
+        {
+          curState = Wait;
+        }
+        break;
+      case Connecting:
+
+        // TEST CODE---------------------------------------------
+        // for (int i = 0; i < 2; i++)
+        // {
+        //   if (i == 0)
+        //   {
+        //     temp = (uint8_t)(received & 0xFF);
+        //   }
+        //   else
+        //   {
+        //     temp = (uint8_t)((received >> 8) & 0xFF);
+        //   }
+        //   switch (temp)
+        //   {
+        //   case X:
+        //     buffer[i] = 'X';
+        //     break;
+        //   case CIRCLE:
+        //     buffer[i] = 'O';
+        //     break;
+        //   case TRIANGLE:
+        //     buffer[i] = '^';
+        //     break;
+        //   case SQUARE:
+        //     buffer[i] = 'S';
+        //     break;
+        //   case R1:
+        //     buffer[i] = 'r';
+        //     break;
+        //   case R2:
+        //     buffer[i] = 'R';
+        //     break;
+        //   case L1:
+        //     buffer[i] = 'l';
+        //     break;
+        //   case L2:
+        //     buffer[i] = 'L';
+        //     break;
+        //   default:
+        //     buffer[i] = 'G';
+        //     break;
+        //   }
+        // }
+        // HAL_UART_Transmit(&huart2, (uint8_t *)&buffer, 3, 1);
+        // TEST CODE---------------------------------------------
+
+        lowByte = (uint8_t)(received & 0xFF);
+        highByte = (uint8_t)((received >> 8) & 0xFF);
+        // If Not Valid Data Go to Disconnected cause comething might be wrong
+        if (lowByte == X || lowByte == CIRCLE || lowByte == TRIANGLE || lowByte == SQUARE || lowByte == R1 || lowByte == R2 || lowByte == L1 || lowByte == L2)
+        {
+          if (highByte == X || highByte == CIRCLE || highByte == TRIANGLE || highByte == SQUARE || highByte == R1 || highByte == R2 || highByte == L1 || highByte == L2)
+          {
+            buttons[buttonsGotten++] = lowByte;
+            buttons[buttonsGotten++] = highByte;
+          }
+        }
+
+        // If all buttons have been gotten go to Input State
+        if (buttonsGotten == 8)
+        {
+          curState = Input;
+
+          // TEST CODE---------------------------------------------
+          HAL_UART_Transmit(&huart2, "\n", 1, 1);
+          for (int i = 0; i < 8; i++)
+          {
+            switch (buttons[i])
+            {
+            case X:
+              buttonsBuffer[i] = 'X';
+              break;
+            case CIRCLE:
+              buttonsBuffer[i] = 'O';
+              break;
+            case TRIANGLE:
+              buttonsBuffer[i] = '^';
+              break;
+            case SQUARE:
+              buttonsBuffer[i] = 'S';
+              break;
+            case R1:
+              buttonsBuffer[i] = 'r';
+              break;
+            case R2:
+              buttonsBuffer[i] = 'R';
+              break;
+            case L1:
+              buttonsBuffer[i] = 'l';
+              break;
+            case L2:
+              buttonsBuffer[i] = 'L';
+              break;
+            default:
+              buttonsBuffer[i] = 'G';
+              break;
+            }
+          }
+          HAL_UART_Transmit(&huart2, (uint8_t *)&buttonsBuffer, 9, 1);
+          // TEST CODE---------------------------------------------
+        }
+        break;
+      case Input:
+        break;
+      case Disconnected:
+        if (received == 0xAA)
+        {
+          curState = Input;
+        }
+        else
+        {
+          curState = Wait;
+        }
+        break;
+      default:
+        break;
+      }
+      awaitResponse = false;
+      received = 0;
+    }
+
     osDelay(1);
-    /* USER CODE END StartAttachment */
   }
+  /* USER CODE END StartAttachment */
 }
 
 /* USER CODE BEGIN Header_StartBluetooth */
