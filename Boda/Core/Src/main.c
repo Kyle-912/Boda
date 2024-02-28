@@ -830,7 +830,6 @@ void StartAttachment(void *argument)
   uint8_t lowByte;
   uint8_t highByte;
   uint8_t command = 0x64;
-  uint8_t connectionConfirm = 0;
 
   enum States
   {
@@ -853,6 +852,7 @@ void StartAttachment(void *argument)
   uint8_t baseDelay = 3;
 
   uint8_t temp = 0;
+  uint16_t ID = 0;
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
 
   for (;;)
@@ -870,6 +870,7 @@ void StartAttachment(void *argument)
         awaitResponse = true;
         commandDelay = 0;
         buttonsGotten = 0;
+        ID = 0;
         break;
       case Identify:
         command = 0x64;
@@ -959,11 +960,13 @@ void StartAttachment(void *argument)
           curState = Connecting;
 
           temp = (uint8_t)(received & 0xFF);
-          received = (received >> 8);
-          received |= ((uint16_t)temp << 8);
+          ID = (received >> 8);
+          ID |= ((uint16_t)temp << 8);
+          //Test Code ------------------------------
           HAL_UART_Transmit(&huart2, "\nID: ", 6, 1);
-          HAL_UART_Transmit(&huart2, (uint8_t *)&received, 2, 1);
+          HAL_UART_Transmit(&huart2, (uint8_t *)&ID, 2, 1);
           HAL_UART_Transmit(&huart2, "\n", 1, 1);
+          //Test Code ------------------------------
         }
         else
         {
