@@ -177,6 +177,9 @@ void adjust_motors_sinusoidal_gen(float rpm, arm* arm, uint8_t coord, double ris
         // Set Motor Steps_Remaining
         arm->motors[i]->steps_remaining = abs(delta_steps[i]);
 
+        // Set Dir State
+        HAL_GPIO_WritePin(arm->motors[i]->dir_port, arm->motors[i]->dir_pin, arm->motors[i]->dir_state);
+
         // Set Motor Sleep to HIGH
         HAL_GPIO_WritePin(arm->motors[i]->sleep_port, arm->motors[i]->sleep_pin, SET);
     }   
@@ -223,7 +226,7 @@ void del_coordinate(arm* arm) {
 
 void home(arm* arm) {
     for (int i = 0; i < arm->num_motors; i++) {
-        arm->motors[i]->step_count = 0;
+        arm->motors[i]->step_count = arm->motors[i]->step_limit/2;
     }
 }
 

@@ -762,7 +762,7 @@ void Start_Arm_Control(void *argument)
   float rpm = 300;
   short microsteps = FULL_STEPS;
   double deg = 20;
-  const short spr = 200; // Steps per revolution
+  // const short spr = 200; // Steps per revolution
 
   stepper *stepper_motor1 = pvPortMalloc(sizeof(stepper));
   if (stepper_motor1 == NULL) {
@@ -781,7 +781,7 @@ void Start_Arm_Control(void *argument)
 
   // // Motor 3
   motor3 = stepper_motor3;
-  init_stepper(motor3, spr);
+  init_stepper(motor3, 140);
   init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
   init_step_pin(motor3, motor3_step_port, motor3_step_pin);
   init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
@@ -791,7 +791,7 @@ void Start_Arm_Control(void *argument)
 
   // // Motor 2
   motor2 = stepper_motor2;
-  init_stepper(motor2, spr);
+  init_stepper(motor2, 120);
   init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
   init_step_pin(motor2, motor2_step_port, motor2_step_pin);
   init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
@@ -801,14 +801,14 @@ void Start_Arm_Control(void *argument)
 
   // // Motor 1
   motor1 = stepper_motor1;
-  init_stepper(motor1, spr);
+  init_stepper(motor1, 200);
   init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
   init_step_pin(motor1, motor1_step_port, motor1_step_pin);
   init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
   set_micro_en(motor1, 0);
   set_timer(motor1, &htim3);
   set_rpm(motor1, rpm);
-  set_step_limit(motor1, 100);
+  // set_step_limit(motor1, 100);
 
 
   // // Robot Arm
@@ -828,6 +828,7 @@ void Start_Arm_Control(void *argument)
     // IF jogging bit is set
     if (RxBuffer[0] & 0x80)
     {
+      robot_arm->is_jogging = true;
       // IF bit for M1 movement set
       if (RxBuffer[0] & 0x1)
       {
@@ -877,18 +878,25 @@ void Start_Arm_Control(void *argument)
       }
 
       // Save Position to Coordinate
-      if ((RxBuffer[1] & 0x1) && !(RxBuffer_prev[1] & 0x1))
+      if ((RxBuffer[1] & 0x1))
       {
-        save_coordinate(robot_arm);
+        if ((RxBuffer_prev[1] & 0x1) == 0)
+        {
+          save_coordinate(robot_arm);
+        }
       }
     }
     // NOT Jogging
     else
     {
-      if ((RxBuffer[1] & 0x80) && !(RxBuffer_prev[1] & 0x80))
+      if ((RxBuffer[1] & 0x80))
       {
-        uint8_t to_coord = RxBuffer[1] & 0x70;
-        move(robot_arm, to_coord);
+        robot_arm->is_jogging = false;
+        if (RxBuffer_prev[1] != RxBuffer[1])
+        {
+          uint8_t to_coord = (RxBuffer[1] >> 4) - 8;
+          move(robot_arm, to_coord);
+        }
       }
     }
 

@@ -13,17 +13,17 @@ const uint8_t MS_TABLE_SIZE = sizeof(MS_TABLE);
 
 void init_stepper(stepper *motor, short spr)
 {
-    motor->steps = spr;
+    motor->steps = 200;
     motor->dir_state = 0;
     motor->enable_pin = 0;
-    motor->step_count = 0;
+    motor->step_count = spr*40;
     motor->steps_remaining = 0;
     motor->microsteps = 1; // Default = 1 (full steps)
     motor->rpm = 0;
     motor->step_pulse = 0;
     motor->enable_microsteps = 1;
     motor->max_steps = 200;
-    motor->step_limit = 200*80;
+    motor->step_limit = spr*80;
     motor->min_rpm = 40;
 
     motor->dir_port = NULL; // Default = Null (pointer)
