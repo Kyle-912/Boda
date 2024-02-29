@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "main.h": "c",
+        "type_traits": "c",
+        "controller_driver.h": "c",
+        "robot_arm.h": "c"
+    }
+}

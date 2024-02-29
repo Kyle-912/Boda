@@ -1,6 +1,6 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
+ * ***********************
  * @file           : main.c
  * @brief          : Main program body
  ******************************************************************************
@@ -24,7 +24,6 @@
 /* USER CODE BEGIN Includes */
 
 #include "string.h"
-#include "PS2.h"
 #include "A4988.h"
 #include "robot_arm.h"
 #include "stm32f4xx_hal_tim.h"
@@ -59,6 +58,7 @@
 #define motor3_sleep_port GPIOC
 #define motor3_sleep_pin GPIO_PIN_14
 
+
 // Controller Input Processing
 #define UPDATE_BUTTONS_SIGNAL 0x01
 
@@ -80,7 +80,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim1;
@@ -88,19 +87,13 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-/* Definitions for PS2DataUpdate */
-osThreadId_t PS2DataUpdateHandle;
-const osThreadAttr_t PS2DataUpdate_attributes = {
-  .name = "PS2DataUpdate",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
-};
-/* Definitions for AttachmentTest */
-osThreadId_t AttachmentTestHandle;
-const osThreadAttr_t AttachmentTest_attributes = {
-  .name = "AttachmentTest",
+/* Definitions for BLE */
+osThreadId_t BLEHandle;
+const osThreadAttr_t BLE_attributes = {
+  .name = "BLE",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
@@ -118,17 +111,13 @@ const osThreadAttr_t Controller_Resp_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for mPS2Data */
-osMutexId_t mPS2DataHandle;
-const osMutexAttr_t mPS2Data_attributes = {
-  .name = "mPS2Data"
-};
 /* USER CODE BEGIN PV */
 
 // Variables for PS2
-PS2ControllerHandler ps2;
 uint8_t vert_val;
 uint8_t horiz_val;
+// volatile uint8_t receivedFlag = 0; // Flag to indicate data reception
+// volatile uint8_t rxByte;           // Byte received from UART
 
 // variables for Motors
 stepper *motor1 = NULL;
@@ -141,6 +130,8 @@ arm *robot_arm;
 
 uint8_t current_coord = 0;
 
+uint8_t RxBuffer[2] = {0}; // Buffer to store data received
+
 // Variables for controller processing:
 
 
@@ -149,21 +140,18 @@ uint8_t current_coord = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_SPI2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM14_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM13_Init(void);
-void StartPS2DataUpdate(void *argument);
-void StartAttachmentTest(void *argument);
+static void MX_USART1_UART_Init(void);
+void Start_BLE(void *argument);
 void Start_Arm_Control(void *argument);
 void Start_Controller_Response(void *argument);
 
 /* USER CODE BEGIN PFP */
-
-void PS2_Init(PS2ControllerHandler *ps2);
 
 /* USER CODE END PFP */
 
@@ -199,31 +187,36 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_SPI2_Init();
   MX_TIM3_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_TIM14_Init();
   MX_SPI3_Init();
   MX_TIM13_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+
+  // HAL_UART_Receive_IT(&huart2, &rxByte, 1);
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
   // Enable TIM3 global Interrupt & set priority
-  HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
+  // HAL_NVIC_SetPriority(USART2_IRQn, 5, 0);
+  // HAL_NVIC_EnableIRQ(USART2_IRQn);
+
+  // HAL_NVIC_SetPriority(USART2_IRQn, 10, 0); // Set interrupt priority as needed
+  // HAL_NVIC_EnableIRQ(USART2_IRQn);
+
+  // HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+  // HAL_NVIC_EnableIRQ(USART1_IRQn);
   //----------PS2 INIT----------//
-  PS2_Init(&ps2);
 
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
-  /* Create the mutex(es) */
-  /* creation of mPS2Data */
-  mPS2DataHandle = osMutexNew(&mPS2Data_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -242,11 +235,8 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of PS2DataUpdate */
-  PS2DataUpdateHandle = osThreadNew(StartPS2DataUpdate, NULL, &PS2DataUpdate_attributes);
-
-  /* creation of AttachmentTest */
-  AttachmentTestHandle = osThreadNew(StartAttachmentTest, NULL, &AttachmentTest_attributes);
+  /* creation of BLE */
+  BLEHandle = osThreadNew(Start_BLE, NULL, &BLE_attributes);
 
   /* creation of Arm_Control */
   Arm_ControlHandle = osThreadNew(Start_Arm_Control, NULL, &Arm_Control_attributes);
@@ -319,44 +309,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief SPI2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI2_Init(void)
-{
-
-  /* USER CODE BEGIN SPI2_Init 0 */
-
-  /* USER CODE END SPI2_Init 0 */
-
-  /* USER CODE BEGIN SPI2_Init 1 */
-
-  /* USER CODE END SPI2_Init 1 */
-  /* SPI2 parameter configuration*/
-  hspi2.Instance = SPI2;
-  hspi2.Init.Mode = SPI_MODE_MASTER;
-  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi2.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi2.Init.CLKPhase = SPI_PHASE_2EDGE;
-  hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
-  hspi2.Init.FirstBit = SPI_FIRSTBIT_LSB;
-  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi2.Init.CRCPolynomial = 10;
-  if (HAL_SPI_Init(&hspi2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI2_Init 2 */
-
-  /* USER CODE END SPI2_Init 2 */
-
 }
 
 /**
@@ -551,6 +503,39 @@ static void MX_TIM14_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 9600;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -566,13 +551,13 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 9600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.Mode = UART_MODE_RX;
   huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_8;
   if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
@@ -600,36 +585,33 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6
+                          |GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, Shoulder_DIR_Pin|Shoulder_STEP_Pin|PS2_Controller_Chip_Select_Pin|PS2_Controller_Acknowledge_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Base_STEP_Pin */
-  GPIO_InitStruct.Pin = Base_STEP_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Base_STEP_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : Base_SLEEP_Pin Elbow_SLEEP_Pin Elbow_STEP_Pin Elbow_DIR_Pin */
-  GPIO_InitStruct.Pin = Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin;
+  /*Configure GPIO pins : PC13 PC14 PC5 PC6
+                           PC8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_5|GPIO_PIN_6
+                          |GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Shoulder_DIR_Pin Shoulder_STEP_Pin PS2_Controller_Chip_Select_Pin PS2_Controller_Acknowledge_Pin */
-  GPIO_InitStruct.Pin = Shoulder_DIR_Pin|Shoulder_STEP_Pin|PS2_Controller_Chip_Select_Pin|PS2_Controller_Acknowledge_Pin;
+  /*Configure GPIO pins : PA6 PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Attachment_GPIO_Pin Shoulder_SLEEP_Pin Base_DIR_Pin */
-  GPIO_InitStruct.Pin = Attachment_GPIO_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin;
+  /*Configure GPIO pins : Attachment_GPIO_Pin PB6 PB7 */
+  GPIO_InitStruct.Pin = Attachment_GPIO_Pin|GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -641,122 +623,128 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void jog_motor(stepper *motor, float rpm, bool dir, int cont_amount)
+{
+  if (motor->steps_remaining)
+    {
+      motor->steps_remaining = cont_amount;
+    }
+    else
+    {
+      // move_stepper_steps(motor1, 500, 350.0);
+      set_rpm(motor, rpm);
+      if (dir)
+      {
+         move_stepper_deg(motor, 30.0);
+      }
+      else
+      {
+        move_stepper_deg(motor, -30.0);
+      }
+    }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == USART1)
+  {
+    // Notify the BLE task that data has been received
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(BLEHandle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+}
+
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  stepper *current_motor = NULL;
 
-  // Determine which motor's timer has elapsed
-  if (htim->Instance == motor1->timer->Instance)
-    current_motor = motor1;
-  else if (htim->Instance == motor2->timer->Instance)
-    current_motor = motor2;
-  else if (htim->Instance == motor3->timer->Instance)
-    current_motor = motor3;
-  // Add conditions for motor3 and motor4 if needed
+  callback_pulse(robot_arm, htim);
+  // stepper *current_motor = NULL;
 
-  if (current_motor)
-  {
-    pulse_stepper_sinusoid(current_motor);
+  // // Determine which motor's timer has elapsed
+  // if (htim->Instance == motor1->timer->Instance)
+  //   current_motor = motor1;
+  // else if (htim->Instance == motor2->timer->Instance)
+  //   current_motor = motor2;
+  // else if (htim->Instance == motor3->timer->Instance)
+  //   current_motor = motor3;
+  // // Add conditions for motor3 and motor4 if needed
 
-    // Adjust the step_pulse based on the sinusoidal profile for the next step
-    // This requires a function that calculates the delay for the next step
-    // based on the current step number and the sinusoidal profile
-    // if (current_motor->steps_remaining > 0) {
-    //     calculate_next_sinusoidal_pulse(current_motor);
-    //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
-    //     // RESET timer
-    //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
-    // }
-  }
+  // if (current_motor)
+  // {
+  //   if (robot_arm->is_jogging)
+  //   {
+  //     pulse_stepper(current_motor);
+  //   }
+  //   else
+  //   {
+  //     pulse_stepper_sinusoid(current_motor);
+  //   }
+  // }
+
+  //   // Adjust the step_pulse based on the sinusoidal profile for the next step
+  //   // This requires a function that calculates the delay for the next step
+  //   // based on the current step number and the sinusoidal profile
+  //   // if (current_motor->steps_remaining > 0) {
+  //   //     calculate_next_sinusoidal_pulse(current_motor);
+  //   //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
+  //   //     // RESET timer
+  //   //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
+  //   // }
+  // }
 }
 
-void PS2_Init(PS2ControllerHandler *ps2)
-{
-  ps2->Ack_GPIO = GPIOA;
-  ps2->Ack_PIN = GPIO_PIN_14;
-  ps2->CS_GPIO = GPIOA;
-  ps2->CS_PIN = GPIO_PIN_13;
-  ps2->spi = &hspi2;
-  ps2->tim = &htim1;
-  HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
-}
+// void PS2_Init(PS2ControllerHandler *ps2)
+// {
+//   ps2->Ack_GPIO = GPIOA;
+//   ps2->Ack_PIN = GPIO_PIN_14;
+//   ps2->CS_GPIO = GPIOA;
+//   ps2->CS_PIN = GPIO_PIN_13;
+//   ps2->spi = &hspi2;
+//   ps2->tim = &htim1;
+//   HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
+// }
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartPS2DataUpdate */
+/* USER CODE BEGIN Header_Start_BLE */
 /**
- * @brief  Function implementing the PS2DataUpdate thread.
- * @param  argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartPS2DataUpdate */
-void StartPS2DataUpdate(void *argument)
+* @brief Function implementing the BLE thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_Start_BLE */
+void Start_BLE(void *argument)
 {
   /* USER CODE BEGIN 5 */
 
-  /* Infinite loop */
-  // Attempt to get the PS2Data Mutex
-  for (;;)
+  // Set the NVIC priority for USART1 interrupts to 5, with 0 subpriority.
+  // Priorities lower than the RTOS max syscall interrupt priority
+  HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+
+  // Enable the interrupt request (IRQ) for USART1.
+  HAL_NVIC_EnableIRQ(USART1_IRQn);
+
+  // Begin asynchronous reception on USART1 using interrupt mode.
+  HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
+
+  // Task loop
+  for(;;) 
   {
-    osMutexWait(mPS2DataHandle, 50);
-    PS2_Update(&ps2);
-    // delay for 25 microseconds
-    osMutexRelease(mPS2DataHandle);
-
-    // Signal the Controller_Resp thread
-    osThreadFlagsSet(Controller_RespHandle, UPDATE_BUTTONS_SIGNAL);
-
-    osDelay(25U);
-  }
-  // Return the PS2Data Mutex
-
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_StartAttachmentTest */
-/**
- * @brief Function implementing the AttachmentTest thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartAttachmentTest */
-void StartAttachmentTest(void *argument)
-{
-  /* USER CODE BEGIN StartAttachmentTest */
-
-  /* Infinite loop */
-  uint8_t transmit = 0;
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-  // We want the last thing to be transmitted to be 0x00 so when theres no
-  // buttons being pressed the last thing sent is 0
-  bool holding = false;
-  for (;;)
-  {
-    transmit = 0;
-    // Get the PS2Data Mutex
-    osMutexWait(mPS2DataHandle, 10);
-
-    transmit = ((Is_Button_Pressed(&ps2, X) << 0) |
-                (Is_Button_Pressed(&ps2, CIRCLE) << 1) |
-                (Is_Button_Pressed(&ps2, SQUARE) << 2) |
-                (Is_Button_Pressed(&ps2, TRIANGLE) << 3) |
-                (Is_DPad_Pressed(&ps2, DUP) << 4) |
-                (Is_DPad_Pressed(&ps2, DDOWN) << 5) |
-                (Is_DPad_Pressed(&ps2, DLEFT) << 6) |
-                (Is_DPad_Pressed(&ps2, DRIGHT) << 7));
-
-    if (transmit != 0)
+    // Wait indefinitely for a notification from the UART interrupt callback. 
+    // The notification indicates that data has been received. 
+    // If ulTaskNotifyTake returns a value greater than 0, 
+    // it means a notification was received successfully.
+    if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) 
     {
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-      HAL_SPI_Transmit(&hspi3, (uint8_t *)&transmit, 1, 1);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
+      // Prepare to receive more data
+      HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
     }
-    osMutexRelease(mPS2DataHandle);
+
     osDelay(1);
   }
-
-  /* USER CODE END StartAttachmentTest */
+  /* USER CODE END 5 */
 }
 
 /* USER CODE BEGIN Header_Start_Arm_Control */
@@ -776,39 +764,23 @@ void Start_Arm_Control(void *argument)
   double deg = 20;
   const short spr = 200; // Steps per revolution
 
-  double mapped_up;
-  char *messageU = "Left Stick Moved Up\r\n";
-  char *messageD = "Left Stick Moved Down\r\n";
+  stepper *stepper_motor1 = pvPortMalloc(sizeof(stepper));
+  if (stepper_motor1 == NULL) {
+      // Handle memory allocation error
+  }
+  
+  stepper *stepper_motor2 = pvPortMalloc(sizeof(stepper));
+  if (stepper_motor2 == NULL) {
+      // Handle memory allocation error
+  }
 
-  char *messageR = "Left Stick Moved Right\r\n";
-  char *messageL = "Left Stick Moved Left\r\n";
-  double mapped_left = 0;
+  stepper *stepper_motor3 = pvPortMalloc(sizeof(stepper));
+  if (stepper_motor3 == NULL) {
+      // Handle memory allocation error
+  }
 
-  // Motor 1
-  stepper stepper_motor1;
-  motor1 = &stepper_motor1;
-  init_stepper(motor1, spr);
-  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
-  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
-  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
-  set_micro_en(motor1, 0);
-  set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
-
-  // Motor 2
-  stepper stepper_motor2;
-  motor2 = &stepper_motor2;
-  init_stepper(motor2, spr);
-  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
-  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
-  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
-  set_micro_en(motor2, 0);
-  set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
-
-  // Motor 3
-  stepper stepper_motor3;
-  motor3 = &stepper_motor3;
+  // // Motor 3
+  motor3 = stepper_motor3;
   init_stepper(motor3, spr);
   init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
   init_step_pin(motor3, motor3_step_port, motor3_step_pin);
@@ -817,100 +789,185 @@ void Start_Arm_Control(void *argument)
   set_timer(motor3, &htim13);
   set_rpm(motor3, rpm);
 
-  // Robot Arm
+  // // Motor 2
+  motor2 = stepper_motor2;
+  init_stepper(motor2, spr);
+  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
+  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
+  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
+  set_micro_en(motor2, 0);
+  set_timer(motor2, &htim14);
+  set_rpm(motor2, rpm);
+
+  // // Motor 1
+  motor1 = stepper_motor1;
+  init_stepper(motor1, spr);
+  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
+  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
+  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
+  set_micro_en(motor1, 0);
+  set_timer(motor1, &htim3);
+  set_rpm(motor1, rpm);
+  set_step_limit(motor1, 100);
+
+
+  // // Robot Arm
   arm robot_arm_var;
   robot_arm = &robot_arm_var;
   init_arm(robot_arm, 200.0, 3, motor1, motor2, motor3);
+  // init_arm(robot_arm, 200.0, 2, motor1, motor3);
   home(robot_arm);
-  set_arm_rpm(robot_arm, 450);
+  set_arm_rpm(robot_arm, 300);
+
+  uint8_t RxBuffer_prev[2] = {0};
 
   /* Infinite loop */
   for (;;)
   {
+
+    // IF jogging bit is set
+    if (RxBuffer[0] & 0x80)
+    {
+      // IF bit for M1 movement set
+      if (RxBuffer[0] & 0x1)
+      {
+        // Check DIR bit and move
+        if (RxBuffer[0] & 0x2)
+        {
+          jog_motor(motor1, 40, 1, 50);
+        }
+        else
+        {
+          jog_motor(motor1, 40, 0, 50);
+        }
+      }
+
+      // IF bit for M2 movement set
+      if (RxBuffer[0] & 0x4)
+      {
+        // Check DIR bit and move
+        if (RxBuffer[0] & 0x8)
+        {
+          // Check DIR bit and move
+          jog_motor(motor2, 200, 1, 300);
+        }
+        else
+        {
+          jog_motor(motor2, 200, 0, 300);
+        }
+      }
+
+      // IF bit for M3 movement set
+      if (RxBuffer[0] & 0x10)
+      {
+        if (RxBuffer[0] & 0x20)
+        {
+          jog_motor(motor3, 200, 1, 300);
+        }
+        else
+        {
+          jog_motor(motor3, 200, 0, 300);
+        }
+      }
+  
+      // Home Robot Arm
+      if ((RxBuffer[0] & 0x40) && !(RxBuffer_prev[0] & 0x40))
+      {
+        home(robot_arm);
+      }
+
+      // Save Position to Coordinate
+      if ((RxBuffer[1] & 0x1) && !(RxBuffer_prev[1] & 0x1))
+      {
+        save_coordinate(robot_arm);
+      }
+    }
+    // NOT Jogging
+    else
+    {
+      if ((RxBuffer[1] & 0x80) && !(RxBuffer_prev[1] & 0x80))
+      {
+        uint8_t to_coord = RxBuffer[1] & 0x70;
+        move(robot_arm, to_coord);
+      }
+    }
+
+
+    RxBuffer_prev[0] = RxBuffer[0];
+    RxBuffer_prev[1] = RxBuffer[1];
+
+
+
+
     // If User Is Jogging Robot
     // =======================================================================================
     // ----------------------------------------Vertical---------------------------------------
     // -----------------------------------------Motor1----------------------------------------
-    if (robot_arm->is_jogging)
-    {
-      vert_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
-      horiz_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
-      // If moving vertically
-      if (vert_val != NEUTRAL)
-      {
-        // Vertical is less than neutral (Down)
-        if (vert_val < NEUTRAL)
-        {
-          set_dir_state(motor1, 1);
-          mapped_up = map_range(vert_val, 127, 0, low_rpm, high_rpm);
-          HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
-        }
+    // if (robot_arm->is_jogging)
+    // {
+    //   vert_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
+    //   horiz_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
+    //   // If moving vertically
+    //   if (vert_val != NEUTRAL)
+    //   {
+    //     // Vertical is less than neutral (Down)
+    //     if (vert_val < NEUTRAL)
+    //     {
+    //       set_dir_state(motor1, 1);
+    //       mapped_up = map_range(vert_val, 127, 0, low_rpm, high_rpm);
+    //       HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
+    //     }
 
-        // Vertical is greater than neutral (up)
-        else
-        {
-          set_dir_state(motor1, 0);
-          mapped_up = map_range(vert_val, 127, 255, low_rpm, high_rpm);
-          HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
-        }
+    //     // Vertical is greater than neutral (up)
+    //     else
+    //     {
+    //       set_dir_state(motor1, 0);
+    //       mapped_up = map_range(vert_val, 127, 255, low_rpm, high_rpm);
+    //       HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
+    //     }
 
-        // If the joystick is moved move the motor
-        if (!motor1->steps_remaining)
-        {
-          set_rpm(motor1, mapped_up);
-          move_stepper_deg(motor1, deg);
-        }
-      }
-      // ---------------------------------------Horizontal--------------------------------------
-      // -----------------------------------------Motor2----------------------------------------
-      if (horiz_val != NEUTRAL)
-      {
-        if (horiz_val < NEUTRAL)
-        {
-          set_dir_state(motor2, 1);
-          mapped_left = map_range(horiz_val, 127, 0, low_rpm, high_rpm);
-          HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
-        }
+    //     // If the joystick is moved move the motor
+    //     if (!motor1->steps_remaining)
+    //     {
+    //       set_rpm(motor1, mapped_up);
+    //       move_stepper_deg(motor1, deg);
+    //     }
+    //   }
+    //   // ---------------------------------------Horizontal--------------------------------------
+    //   // -----------------------------------------Motor2----------------------------------------
+    //   if (horiz_val != NEUTRAL)
+    //   {
+    //     if (horiz_val < NEUTRAL)
+    //     {
+    //       set_dir_state(motor2, 1);
+    //       mapped_left = map_range(horiz_val, 127, 0, low_rpm, high_rpm);
+    //       HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
+    //     }
 
-        else
-        {
-          set_dir_state(motor2, 0);
-          mapped_left = map_range(horiz_val, 127, 255, low_rpm, high_rpm);
-          HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
-        }
+    //     else
+    //     {
+    //       set_dir_state(motor2, 0);
+    //       mapped_left = map_range(horiz_val, 127, 255, low_rpm, high_rpm);
+    //       HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
+    //     }
 
-        // If the joystick is moved move the motor
-        if (!motor2->steps_remaining)
-        {
-          set_rpm(motor2, mapped_left);
-          move_stepper_deg(motor2, deg);
-        }
-      }
-      // =======================================================================================
-    }
-    else
-    {
-      // USER IS NOT JOGGING -> POINT SWITCHING
+    //     // If the joystick is moved move the motor
+    //     if (!motor2->steps_remaining)
+    //     {
+    //       set_rpm(motor2, mapped_left);
+    //       move_stepper_deg(motor2, deg);
+    //     }
+    //   }
+    //   // =======================================================================================
+    // }
+    // else
+    // {
+    //   // USER IS NOT JOGGING -> POINT SWITCHING
       
-    }
+    // }
+    osDelay(1);
   }
-  osDelay(1);
   /* USER CODE END Start_Arm_Control */
-}
-
-void XButtonPressedWrapper(void) {
-    save_coordinate(robot_arm); // Call the actual function with the required argument
-}
-
-void updateButtonStateAndFunctionCall(bool *currentPressed, bool *prevPressed, bool isPressedNow, void (*functionCall)(void)) {
-    if (isPressedNow && !*prevPressed) {
-        if (functionCall != NULL) {
-            functionCall(); // Call the specific function if the button is pressed
-        } else {
-            *currentPressed = !*currentPressed; // Toggle the state if no function needs to be called
-        }
-    }
-    *prevPressed = isPressedNow;
 }
 
 /* USER CODE BEGIN Header_Start_Controller_Response */
@@ -924,62 +981,62 @@ void Start_Controller_Response(void *argument)
 {
   /* USER CODE BEGIN Start_Controller_Response */
 
-  static bool trianglePressed = false; // This variable tracks the toggle state of the TRIANGLE button
-  static bool prevTrianglePressed = false; // This tracks if the TRIANGLE button was pressed in the previous check
-  static bool prevXPressed = false; // This tracks if the X button was pressed in the previous check
+//   static bool trianglePressed = false; // This variable tracks the toggle state of the TRIANGLE button
+//   static bool prevTrianglePressed = false; // This tracks if the TRIANGLE button was pressed in the previous check
+//   static bool prevXPressed = false; // This tracks if the X button was pressed in the previous check
 
-  bool dpadUpState = false, dpadDownState = false;
-  /* Infinite loop */
+//   bool dpadUpState = false, dpadDownState = false;
+//   /* Infinite loop */
   for(;;)
   {
-     // Wait for a signal that indicates the PS2 data has been updated and is ready to check
-        uint32_t flags = osThreadFlagsWait(UPDATE_BUTTONS_SIGNAL, osFlagsWaitAny, osWaitForever);
-        if (flags & UPDATE_BUTTONS_SIGNAL) {
-          // Toggle variable for TRIANGLE and call function for X
-          updateButtonStateAndFunctionCall(&trianglePressed, &prevTrianglePressed, Is_Button_Pressed(&ps2, TRIANGLE), NULL);
-          updateButtonStateAndFunctionCall(NULL, &prevXPressed, Is_Button_Pressed(&ps2, X), XButtonPressedWrapper);
+//      // Wait for a signal that indicates the PS2 data has been updated and is ready to check
+//         uint32_t flags = osThreadFlagsWait(UPDATE_BUTTONS_SIGNAL, osFlagsWaitAny, osWaitForever);
+//         if (flags & UPDATE_BUTTONS_SIGNAL) {
+//           // Toggle variable for TRIANGLE and call function for X
+//           updateButtonStateAndFunctionCall(&trianglePressed, &prevTrianglePressed, Is_Button_Pressed(&ps2, TRIANGLE), NULL);
+//           updateButtonStateAndFunctionCall(NULL, &prevXPressed, Is_Button_Pressed(&ps2, X), XButtonPressedWrapper);
           
-          bool dpadUpPressed = Is_DPad_Pressed(&ps2, DUP);
-          bool dpadDownPressed = Is_DPad_Pressed(&ps2, DDOWN);
+//           bool dpadUpPressed = Is_DPad_Pressed(&ps2, DUP);
+//           bool dpadDownPressed = Is_DPad_Pressed(&ps2, DDOWN);
 
 
 
-          if (!dpadUpState && dpadUpPressed) {
-            // Signal or call function to handle moving to the next coordinate
-            if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
-            {
-                uint8_t next_coord = current_coord + 1;
-                if (next_coord >= robot_arm->num_coords)
-                {
-                  next_coord = 0;
-                }
+//           if (!dpadUpState && dpadUpPressed) {
+//             // Signal or call function to handle moving to the next coordinate
+//             if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
+//             {
+//                 uint8_t next_coord = current_coord + 1;
+//                 if (next_coord >= robot_arm->num_coords)
+//                 {
+//                   next_coord = 0;
+//                 }
 
-                move(robot_arm, next_coord);
-                current_coord = next_coord;
-            }
-          }
-          // Similarly for D-Pad down
-          else if (!dpadDownState && dpadDownPressed) 
-          {
-            // Signal or call function to handle moving to the previous coordinate
-            if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
-            {
-                  uint8_t prev_coord = current_coord - 1;
-                  if (current_coord == 0)
-                  {
-                    prev_coord = robot_arm->num_coords - 1;
-                  }
+//                 move(robot_arm, next_coord);
+//                 current_coord = next_coord;
+//             }
+//           }
+//           // Similarly for D-Pad down
+//           else if (!dpadDownState && dpadDownPressed) 
+//           {
+//             // Signal or call function to handle moving to the previous coordinate
+//             if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
+//             {
+//                   uint8_t prev_coord = current_coord - 1;
+//                   if (current_coord == 0)
+//                   {
+//                     prev_coord = robot_arm->num_coords - 1;
+//                   }
 
-                  move(robot_arm, prev_coord);
-                  current_coord = prev_coord;
-                }
-            }
+//                   move(robot_arm, prev_coord);
+//                   current_coord = prev_coord;
+//                 }
+//             }
 
 
-          osDelay(1); // Small delay
-        }
+//           osDelay(1); // Small delay
+//         }
 
-    osDelay(1); // Small delay to reduce CPU usage
+  osDelay(1); // Small delay to reduce CPU usage
   }
   /* USER CODE END Start_Controller_Response */
 }

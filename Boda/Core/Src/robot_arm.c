@@ -67,7 +67,7 @@ void init_arm(arm* arm, float rpm_, int num_motors, ...) {
     arm->rpm = rpm_; // Initialize RPM
     arm->num_coords = 0; // Initialize the number of coordinates
 
-    arm->is_jogging = false;
+    arm->is_jogging = true;
     
     // Initialize motor pointers
     for (int i = 0; i < num_motors; i++) {
@@ -241,7 +241,10 @@ void save_coordinate(arm* arm) {
 void move(arm* arm, uint8_t to_coord)
 {   
     // Adjust motors using sinusoidal ramping up/down
-    adjust_motors_sinusoidal_gen(arm->rpm, arm, to_coord, 4.0);
+    if (to_coord < arm->num_coords)
+    {
+        adjust_motors_sinusoidal_gen(arm->rpm, arm, to_coord, 4.0);
+    }
 }
 
 // Movement Between Set Points with RPM as a parameter

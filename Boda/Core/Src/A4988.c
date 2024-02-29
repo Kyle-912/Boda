@@ -22,7 +22,8 @@ void init_stepper(stepper *motor, short spr)
     motor->rpm = 0;
     motor->step_pulse = 0;
     motor->enable_microsteps = 1;
-    motor->max_steps = 200*80;
+    motor->max_steps = 200;
+    motor->step_limit = 200*80;
     motor->min_rpm = 40;
 
     motor->dir_port = NULL; // Default = Null (pointer)
@@ -96,9 +97,9 @@ void set_microsteps(stepper *motor, short microsteps)
 }
 
 // set timer
-void set_timer(stepper *motor, TIM_HandleTypeDef *timer)
+void set_timer(stepper *motor, TIM_HandleTypeDef *timer_)
 {
-    motor->timer = timer;
+    motor->timer = timer_;
 }
 
 // set rpm
@@ -144,9 +145,9 @@ uint8_t setMicrostep(stepper *motor) {
     return -1;
 }
 
-void set_max_steps(stepper *motor, short max)
+void set_step_limit(stepper *motor, short max)
 {
-    motor->max_steps = max;
+    motor->step_limit = max*80;
 }
 
 // long calcStepsForRotation(stepper *motor, long deg){
@@ -249,6 +250,7 @@ void move_stepper_deg(stepper *motor, double deg) {
     if (HAL_TIM_Base_Init(motor->timer) != HAL_OK)
     {
         // Handle potential error
+        asm("nop");
     }
 
     // Set timer to 0
@@ -300,7 +302,7 @@ void pulse_stepper(stepper *motor)
             return;
         }
         // 2. if 360 and trying to increase
-        else if (motor->step_count >= motor->max_steps && !motor->dir_state)
+        else if (motor->step_count >= motor->step_limit && !motor->dir_state)
         {
             // reset step pin (don't keep step pin high)
             HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
@@ -369,7 +371,7 @@ void pulse_stepper_sinusoid(stepper *motor)
             return;
         }
         // 2. if 360 and trying to increase
-        else if (motor->step_count >= motor->max_steps && !motor->dir_state)
+        else if (motor->step_count >= motor->step_limit && !motor->dir_state)
         {
             // reset step pin (don't keep step pin high)
             HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
