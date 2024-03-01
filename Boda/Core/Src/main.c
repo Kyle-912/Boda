@@ -814,12 +814,6 @@ void Start_Arm_Control(void *argument)
           jog_motor(motor3, 200, 0, 300);
         }
       }
-  
-      // Home Robot Arm
-      if ((RxBuffer[0] & 0x40) && !(RxBuffer_prev[0] & 0x40))
-      {
-        home(robot_arm);
-      }
 
       // Save Position to Coordinate
       if ((RxBuffer[1] & 0x1))
