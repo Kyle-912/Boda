@@ -104,13 +104,6 @@ const osThreadAttr_t Arm_Control_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for Controller_Resp */
-osThreadId_t Controller_RespHandle;
-const osThreadAttr_t Controller_Resp_attributes = {
-  .name = "Controller_Resp",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* USER CODE BEGIN PV */
 
 // Variables for PS2
@@ -149,7 +142,6 @@ static void MX_TIM13_Init(void);
 static void MX_USART1_UART_Init(void);
 void Start_BLE(void *argument);
 void Start_Arm_Control(void *argument);
-void Start_Controller_Response(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -240,9 +232,6 @@ int main(void)
 
   /* creation of Arm_Control */
   Arm_ControlHandle = osThreadNew(Start_Arm_Control, NULL, &Arm_Control_attributes);
-
-  /* creation of Controller_Resp */
-  Controller_RespHandle = osThreadNew(Start_Controller_Response, NULL, &Controller_Resp_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -658,53 +647,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-
   callback_pulse(robot_arm, htim);
-  // stepper *current_motor = NULL;
-
-  // // Determine which motor's timer has elapsed
-  // if (htim->Instance == motor1->timer->Instance)
-  //   current_motor = motor1;
-  // else if (htim->Instance == motor2->timer->Instance)
-  //   current_motor = motor2;
-  // else if (htim->Instance == motor3->timer->Instance)
-  //   current_motor = motor3;
-  // // Add conditions for motor3 and motor4 if needed
-
-  // if (current_motor)
-  // {
-  //   if (robot_arm->is_jogging)
-  //   {
-  //     pulse_stepper(current_motor);
-  //   }
-  //   else
-  //   {
-  //     pulse_stepper_sinusoid(current_motor);
-  //   }
-  // }
-
-  //   // Adjust the step_pulse based on the sinusoidal profile for the next step
-  //   // This requires a function that calculates the delay for the next step
-  //   // based on the current step number and the sinusoidal profile
-  //   // if (current_motor->steps_remaining > 0) {
-  //   //     calculate_next_sinusoidal_pulse(current_motor);
-  //   //     __HAL_TIM_SET_AUTORELOAD(current_motor->timer, current_motor->step_pulse);
-  //   //     // RESET timer
-  //   //     __HAL_TIM_SET_COUNTER(current_motor->timer, 0);
-  //   // }
-  // }
 }
-
-// void PS2_Init(PS2ControllerHandler *ps2)
-// {
-//   ps2->Ack_GPIO = GPIOA;
-//   ps2->Ack_PIN = GPIO_PIN_14;
-//   ps2->CS_GPIO = GPIOA;
-//   ps2->CS_PIN = GPIO_PIN_13;
-//   ps2->spi = &hspi2;
-//   ps2->tim = &htim1;
-//   HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
-// }
 
 /* USER CODE END 4 */
 
@@ -976,77 +920,6 @@ void Start_Arm_Control(void *argument)
     osDelay(1);
   }
   /* USER CODE END Start_Arm_Control */
-}
-
-/* USER CODE BEGIN Header_Start_Controller_Response */
-/**
-* @brief Function implementing the Controller_Resp thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Start_Controller_Response */
-void Start_Controller_Response(void *argument)
-{
-  /* USER CODE BEGIN Start_Controller_Response */
-
-//   static bool trianglePressed = false; // This variable tracks the toggle state of the TRIANGLE button
-//   static bool prevTrianglePressed = false; // This tracks if the TRIANGLE button was pressed in the previous check
-//   static bool prevXPressed = false; // This tracks if the X button was pressed in the previous check
-
-//   bool dpadUpState = false, dpadDownState = false;
-//   /* Infinite loop */
-  for(;;)
-  {
-//      // Wait for a signal that indicates the PS2 data has been updated and is ready to check
-//         uint32_t flags = osThreadFlagsWait(UPDATE_BUTTONS_SIGNAL, osFlagsWaitAny, osWaitForever);
-//         if (flags & UPDATE_BUTTONS_SIGNAL) {
-//           // Toggle variable for TRIANGLE and call function for X
-//           updateButtonStateAndFunctionCall(&trianglePressed, &prevTrianglePressed, Is_Button_Pressed(&ps2, TRIANGLE), NULL);
-//           updateButtonStateAndFunctionCall(NULL, &prevXPressed, Is_Button_Pressed(&ps2, X), XButtonPressedWrapper);
-          
-//           bool dpadUpPressed = Is_DPad_Pressed(&ps2, DUP);
-//           bool dpadDownPressed = Is_DPad_Pressed(&ps2, DDOWN);
-
-
-
-//           if (!dpadUpState && dpadUpPressed) {
-//             // Signal or call function to handle moving to the next coordinate
-//             if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
-//             {
-//                 uint8_t next_coord = current_coord + 1;
-//                 if (next_coord >= robot_arm->num_coords)
-//                 {
-//                   next_coord = 0;
-//                 }
-
-//                 move(robot_arm, next_coord);
-//                 current_coord = next_coord;
-//             }
-//           }
-//           // Similarly for D-Pad down
-//           else if (!dpadDownState && dpadDownPressed) 
-//           {
-//             // Signal or call function to handle moving to the previous coordinate
-//             if (!robot_arm->is_jogging && robot_arm->num_coords > 0)
-//             {
-//                   uint8_t prev_coord = current_coord - 1;
-//                   if (current_coord == 0)
-//                   {
-//                     prev_coord = robot_arm->num_coords - 1;
-//                   }
-
-//                   move(robot_arm, prev_coord);
-//                   current_coord = prev_coord;
-//                 }
-//             }
-
-
-//           osDelay(1); // Small delay
-//         }
-
-  osDelay(1); // Small delay to reduce CPU usage
-  }
-  /* USER CODE END Start_Controller_Response */
 }
 
 /**

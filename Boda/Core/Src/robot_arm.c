@@ -1,4 +1,5 @@
 #include "robot_arm.h"
+#include <stdlib.h>
 #include <math.h>
 #include <stdarg.h>  // Include this for variable length arguments
 

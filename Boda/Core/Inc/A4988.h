@@ -88,6 +88,8 @@ long calcStepsForRotation(stepper *motor, double deg);
 void move_stepper_steps(stepper *motor, int16_t steps_, float rpm_);
 void move_stepper_deg(stepper *motor, double deg);
 void pulse_stepper(stepper *motor);
+void pulse_stepper_sinusoid(stepper *motor);
+void calculate_next_sinusoidal_pulse(stepper *motor);
 
 void init_sinusoidal_vars(int total, double peak_rpm, double rise_time, stepper *motor);
 // double calculate_next_sinusoidal_pulse(stepper *motor);
