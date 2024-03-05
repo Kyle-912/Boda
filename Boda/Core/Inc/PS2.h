@@ -1,4 +1,5 @@
 #include "stm32f4xx_hal.h"
+#include "stdbool.h"
 
 #ifndef PS2_CONTROLLER_H
 #define PS2_CONTROLLER_H
@@ -33,10 +34,6 @@
 #define NEUTRAL 0x7F
 #define DEADZONE_HI 0x9F
 #define DEADZONE_LO 0x5F
-
-// typedef int bool; // Define a custom boolean type
-// #define true 1    // Define true as 1
-// #define false 0   // Define false as 0
 
 typedef struct
 {
