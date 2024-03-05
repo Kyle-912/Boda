@@ -670,6 +670,27 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+void jog_motor(stepper *motor, float rpm, bool dir, int cont_amount) // MOVE THIS!
+{
+  if (motor->steps_remaining)
+  {
+    motor->steps_remaining = cont_amount;
+  }
+  else
+  {
+    // move_stepper_steps(motor1, 500, 350.0);
+    set_rpm(motor, rpm);
+    if (dir)
+    {
+      move_stepper_deg(motor, 30.0);
+    }
+    else
+    {
+      move_stepper_deg(motor, -30.0);
+    }
+  }
+}
+
 // Callback function
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
