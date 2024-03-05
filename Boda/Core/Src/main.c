@@ -84,47 +84,47 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim13;
 TIM_HandleTypeDef htim14;
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* Definitions for PS2DataUpdate */
 osThreadId_t PS2DataUpdateHandle;
 const osThreadAttr_t PS2DataUpdate_attributes = {
-    .name = "PS2DataUpdate",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityHigh,
+  .name = "PS2DataUpdate",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for StepperMotor1 */
-osThreadId_t StepperMotor1Handle;
-const osThreadAttr_t StepperMotor1_attributes = {
-    .name = "StepperMotor1",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+/* Definitions for RobotArm */
+osThreadId_t RobotArmHandle;
+const osThreadAttr_t RobotArm_attributes = {
+  .name = "RobotArm",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for StepperMotor2 */
-osThreadId_t StepperMotor2Handle;
-const osThreadAttr_t StepperMotor2_attributes = {
-    .name = "StepperMotor2",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+/* Definitions for Attachment */
+osThreadId_t AttachmentHandle;
+const osThreadAttr_t Attachment_attributes = {
+  .name = "Attachment",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for StepperMotor3 */
-osThreadId_t StepperMotor3Handle;
-const osThreadAttr_t StepperMotor3_attributes = {
-    .name = "StepperMotor3",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
-};
-/* Definitions for AttachmentTest */
-osThreadId_t AttachmentTestHandle;
-const osThreadAttr_t AttachmentTest_attributes = {
-    .name = "AttachmentTest",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+/* Definitions for Bluetooth */
+osThreadId_t BluetoothHandle;
+const osThreadAttr_t Bluetooth_attributes = {
+  .name = "Bluetooth",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for mPS2Data */
 osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
-    .name = "mPS2Data"};
+  .name = "mPS2Data"
+};
+/* Definitions for mAttachmentData */
+osMutexId_t mAttachmentDataHandle;
+const osMutexAttr_t mAttachmentData_attributes = {
+  .name = "mAttachmentData"
+};
 /* USER CODE BEGIN PV */
 
 PS2ControllerHandler ps2;
@@ -149,11 +149,11 @@ static void MX_TIM1_Init(void);
 static void MX_TIM14_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM13_Init(void);
+static void MX_USART1_UART_Init(void);
 void StartPS2DataUpdate(void *argument);
-void StartStepperMotor1(void *argument);
-void StartStepperMotor2(void *argument);
-void StartStepperMotor3(void *argument);
-void StartAttachmentTest(void *argument);
+void StartRobotArm(void *argument);
+void StartAttachment(void *argument);
+void StartBluetooth(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -166,9 +166,9 @@ void PS2_Init(PS2ControllerHandler *ps2);
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -200,6 +200,7 @@ int main(void)
   MX_TIM14_Init();
   MX_SPI3_Init();
   MX_TIM13_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
@@ -218,6 +219,9 @@ int main(void)
   /* Create the mutex(es) */
   /* creation of mPS2Data */
   mPS2DataHandle = osMutexNew(&mPS2Data_attributes);
+
+  /* creation of mAttachmentData */
+  mAttachmentDataHandle = osMutexNew(&mAttachmentData_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -239,17 +243,14 @@ int main(void)
   /* creation of PS2DataUpdate */
   PS2DataUpdateHandle = osThreadNew(StartPS2DataUpdate, NULL, &PS2DataUpdate_attributes);
 
-  /* creation of StepperMotor1 */
-  StepperMotor1Handle = osThreadNew(StartStepperMotor1, NULL, &StepperMotor1_attributes);
+  /* creation of RobotArm */
+  RobotArmHandle = osThreadNew(StartRobotArm, NULL, &RobotArm_attributes);
 
-  /* creation of StepperMotor2 */
-  StepperMotor2Handle = osThreadNew(StartStepperMotor2, NULL, &StepperMotor2_attributes);
+  /* creation of Attachment */
+  AttachmentHandle = osThreadNew(StartAttachment, NULL, &Attachment_attributes);
 
-  /* creation of StepperMotor3 */
-  StepperMotor3Handle = osThreadNew(StartStepperMotor3, NULL, &StepperMotor3_attributes);
-
-  /* creation of AttachmentTest */
-  AttachmentTestHandle = osThreadNew(StartAttachmentTest, NULL, &AttachmentTest_attributes);
+  /* creation of Bluetooth */
+  BluetoothHandle = osThreadNew(StartBluetooth, NULL, &Bluetooth_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -265,29 +266,29 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  /* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-  /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   /** Configure the main internal regulator output voltage
-   */
+  */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
+  * in the RCC_OscInitTypeDef structure.
+  */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
@@ -304,8 +305,9 @@ void SystemClock_Config(void)
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
-   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -318,10 +320,10 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief SPI2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief SPI2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI2_Init(void)
 {
 
@@ -352,13 +354,14 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
+
 }
 
 /**
- * @brief SPI3 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief SPI3 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_SPI3_Init(void)
 {
 
@@ -373,11 +376,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi3.Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -389,13 +392,14 @@ static void MX_SPI3_Init(void)
   /* USER CODE BEGIN SPI3_Init 2 */
 
   /* USER CODE END SPI3_Init 2 */
+
 }
 
 /**
- * @brief TIM1 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM1_Init(void)
 {
 
@@ -410,7 +414,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 72 - 1;
+  htim1.Init.Prescaler = 72-1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -434,13 +438,14 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+
 }
 
 /**
- * @brief TIM3 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM3_Init(void)
 {
 
@@ -478,13 +483,14 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
 }
 
 /**
- * @brief TIM13 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM13 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM13_Init(void)
 {
 
@@ -508,13 +514,14 @@ static void MX_TIM13_Init(void)
   /* USER CODE BEGIN TIM13_Init 2 */
 
   /* USER CODE END TIM13_Init 2 */
+
 }
 
 /**
- * @brief TIM14 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief TIM14 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_TIM14_Init(void)
 {
 
@@ -538,13 +545,47 @@ static void MX_TIM14_Init(void)
   /* USER CODE BEGIN TIM14_Init 2 */
 
   /* USER CODE END TIM14_Init 2 */
+
 }
 
 /**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_USART2_UART_Init(void)
 {
 
@@ -570,32 +611,37 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
+
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, Base_SLEEP_Pin | Elbow_SLEEP_Pin | Elbow_STEP_Pin | Elbow_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, Shoulder_DIR_Pin | Shoulder_STEP_Pin | PS2_Controller_Chip_Select_Pin | PS2_Controller_Acknowledge_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Shoulder_DIR_Pin|Shoulder_STEP_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Attachment_GPIO_Pin | Shoulder_SLEEP_Pin | Base_DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Attachment_GPIO_GPIO_Port, Attachment_GPIO_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, PS2_Controller_CS_Pin|PS2_Controller_Ack_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : Base_STEP_Pin */
   GPIO_InitStruct.Pin = Base_STEP_Pin;
@@ -604,28 +650,41 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(Base_STEP_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Base_SLEEP_Pin Elbow_SLEEP_Pin Elbow_STEP_Pin Elbow_DIR_Pin */
-  GPIO_InitStruct.Pin = Base_SLEEP_Pin | Elbow_SLEEP_Pin | Elbow_STEP_Pin | Elbow_DIR_Pin;
+  GPIO_InitStruct.Pin = Base_SLEEP_Pin|Elbow_SLEEP_Pin|Elbow_STEP_Pin|Elbow_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Shoulder_DIR_Pin Shoulder_STEP_Pin PS2_Controller_Chip_Select_Pin PS2_Controller_Acknowledge_Pin */
-  GPIO_InitStruct.Pin = Shoulder_DIR_Pin | Shoulder_STEP_Pin | PS2_Controller_Chip_Select_Pin | PS2_Controller_Acknowledge_Pin;
+  /*Configure GPIO pins : Shoulder_DIR_Pin Shoulder_STEP_Pin */
+  GPIO_InitStruct.Pin = Shoulder_DIR_Pin|Shoulder_STEP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : Attachment_GPIO_Pin Shoulder_SLEEP_Pin Base_DIR_Pin */
-  GPIO_InitStruct.Pin = Attachment_GPIO_Pin | Shoulder_SLEEP_Pin | Base_DIR_Pin;
+  /*Configure GPIO pin : Blue_Button_Pin */
+  GPIO_InitStruct.Pin = Blue_Button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(Blue_Button_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Attachment_GPIO_Pin */
+  GPIO_InitStruct.Pin = Attachment_GPIO_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Attachment_GPIO_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PS2_Controller_CS_Pin PS2_Controller_Ack_Pin Shoulder_SLEEP_Pin Base_DIR_Pin */
+  GPIO_InitStruct.Pin = PS2_Controller_CS_Pin|PS2_Controller_Ack_Pin|Shoulder_SLEEP_Pin|Base_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
@@ -699,213 +758,64 @@ void StartPS2DataUpdate(void *argument)
   /* USER CODE END 5 */
 }
 
-/* USER CODE BEGIN Header_StartStepperMotor1 */
+/* USER CODE BEGIN Header_StartRobotArm */
 /**
- * @brief Function implementing the StepperMotor1 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartStepperMotor1 */
-void StartStepperMotor1(void *argument)
+* @brief Function implementing the RobotArm thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartRobotArm */
+void StartRobotArm(void *argument)
 {
-  /* USER CODE BEGIN StartStepperMotor1 */
-
-  // Motor 1
-  stepper stepper_motor;
-  motor1 = &stepper_motor;
-  init_stepper(motor1, spr);
-  init_dir_pin(motor1, motor1_dir_port, motor1_dir_pin);
-  init_step_pin(motor1, motor1_step_port, motor1_step_pin);
-  init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
-  set_micro_en(motor1, 0);
-  set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
-
-  //----------Task Variables----------//
-  char *messageR = "Left Stick Moved Right\r\n";
-  char *messageL = "Left Stick Moved Left\r\n";
-  double mapped_left = 0;
-  uint8_t left_val;
-
+  /* USER CODE BEGIN StartRobotArm */
   /* Infinite loop */
-  for (;;)
-  {
-    osMutexWait(mPS2DataHandle, 50);
-    // get the current value of the joystick left right
-    left_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_RL);
-
-    // evaluate joystick status
-    if (left_val != NEUTRAL)
-    {
-      if (left_val < NEUTRAL)
-      {
-        set_dir_state(&stepper_motor, 1);
-        mapped_left = map_range(left_val, 127, 0, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageL, strlen(messageL), 100);
-      }
-      else
-      {
-        set_dir_state(&stepper_motor, 0);
-        mapped_left = map_range(left_val, 127, 255, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageR, strlen(messageR), 100);
-      }
-      set_rpm(&stepper_motor, mapped_left);
-      // If the joystick is moved move the motor
-      if (!stepper_motor.steps_remaining)
-      {
-        move_stepper_deg(&stepper_motor, deg);
-      }
-    }
-    osMutexRelease(mPS2DataHandle);
-    osDelay(10);
-  }
-
-  /* USER CODE END StartStepperMotor1 */
-}
-
-/* USER CODE BEGIN Header_StartStepperMotor2 */
-/**
- * @brief Function implementing the StepperMotor2 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartStepperMotor2 */
-void StartStepperMotor2(void *argument)
-{
-  /* USER CODE BEGIN StartStepperMotor2 */
-
-  // Motor 2
-  stepper stepper_motor;
-  motor2 = &stepper_motor;
-  init_stepper(motor2, spr);
-  init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
-  init_step_pin(motor2, motor2_step_port, motor2_step_pin);
-  init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
-  set_micro_en(motor2, 0);
-  set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
-
-  //----------Task Variables----------//
-  char *messageU = "Left Stick Moved Up\r\n";
-  char *messageD = "Left Stick Moved Down\r\n";
-  double mapped_up = 0;
-  uint8_t up_val;
-
-  /* Infinite loop */
-  for (;;)
-  {
-    osMutexWait(mPS2DataHandle, 50);
-    // get the current value of the joystick up down
-    up_val = Is_Joystick_Left_Moved(&ps2, JOYSTICK_L_UD);
-
-    // evaluate joystick status
-    if (up_val != NEUTRAL)
-    {
-      if (up_val < NEUTRAL)
-      {
-        set_dir_state(&stepper_motor, 1);
-        mapped_up = map_range(up_val, 127, 0, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageU, strlen(messageU), 100);
-      }
-      else
-      {
-        set_dir_state(&stepper_motor, 0);
-        mapped_up = map_range(up_val, 127, 255, low_rpm, high_rpm);
-        HAL_UART_Transmit(&huart2, (uint8_t *)messageD, strlen(messageD), 100);
-      }
-      set_rpm(&stepper_motor, mapped_up);
-      // If the joystick is moved move the motor
-      if (!stepper_motor.steps_remaining)
-      {
-        move_stepper_deg(&stepper_motor, deg);
-      }
-    }
-    osMutexRelease(mPS2DataHandle);
-    osDelay(10);
-  }
-
-  /* USER CODE END StartStepperMotor2 */
-}
-
-/* USER CODE BEGIN Header_StartStepperMotor3 */
-/**
- * @brief Function implementing the StepperMotor3 thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartStepperMotor3 */
-void StartStepperMotor3(void *argument)
-{
-  /* USER CODE BEGIN StartStepperMotor3 */
-
-  // Motor 3
-  stepper stepper_motor;
-  motor3 = &stepper_motor;
-  init_stepper(motor3, spr);
-  init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
-  init_step_pin(motor3, motor3_step_port, motor3_step_pin);
-  init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
-  set_micro_en(motor3, 0);
-  set_timer(motor3, &htim13);
-  set_rpm(motor3, rpm);
-  /* Infinite loop */
-  for (;;)
+  for(;;)
   {
     osDelay(1);
   }
-
-  /* USER CODE END StartStepperMotor3 */
+  /* USER CODE END StartRobotArm */
 }
 
-/* USER CODE BEGIN Header_StartAttachmentTest */
+/* USER CODE BEGIN Header_StartAttachment */
 /**
- * @brief Function implementing the AttachmentTest thread.
- * @param argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartAttachmentTest */
-void StartAttachmentTest(void *argument)
+* @brief Function implementing the Attachment thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartAttachment */
+void StartAttachment(void *argument)
 {
-  /* USER CODE BEGIN StartAttachmentTest */
-
+  /* USER CODE BEGIN StartAttachment */
   /* Infinite loop */
-  uint8_t transmit = 0;
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-  // We want the last thing to be transmitted to be 0x00 so when theres no
-  // buttons being pressed the last thing sent is 0
-  bool holding = false;
-  for (;;)
+  for(;;)
   {
-    transmit = 0;
-    // Get the PS2Data Mutex
-    osMutexWait(mPS2DataHandle, 10);
-
-    transmit = ((Is_Button_Pressed(&ps2, X) << 0) |
-                (Is_Button_Pressed(&ps2, CIRCLE) << 1) |
-                (Is_Button_Pressed(&ps2, SQUARE) << 2) |
-                (Is_Button_Pressed(&ps2, TRIANGLE) << 3) |
-                (Is_DPad_Pressed(&ps2, DUP) << 4) |
-                (Is_DPad_Pressed(&ps2, DDOWN) << 5) |
-                (Is_DPad_Pressed(&ps2, DLEFT) << 6) |
-                (Is_DPad_Pressed(&ps2, DRIGHT) << 7));
-
-    if (transmit != 0)
-    {
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-      HAL_SPI_Transmit(&hspi3, (uint8_t *)&transmit, 1, 1);
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-    }
-    osMutexRelease(mPS2DataHandle);
     osDelay(1);
   }
-  
-  /* USER CODE END StartAttachmentTest */
+  /* USER CODE END StartAttachment */
+}
+
+/* USER CODE BEGIN Header_StartBluetooth */
+/**
+* @brief Function implementing the Bluetooth thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartBluetooth */
+void StartBluetooth(void *argument)
+{
+  /* USER CODE BEGIN StartBluetooth */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartBluetooth */
 }
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -917,14 +827,14 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef USE_FULL_ASSERT
+#ifdef  USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
