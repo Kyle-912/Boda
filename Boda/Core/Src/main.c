@@ -92,6 +92,13 @@ const osThreadAttr_t Bluetooth_attributes = {
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityHigh,
 };
+/* Definitions for TESTING_THREAD */
+osThreadId_t TESTING_THREADHandle;
+const osThreadAttr_t TESTING_THREAD_attributes = {
+    .name = "TESTING_THREAD",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityHigh,
+};
 /* Definitions for qCommandQueue */
 osMessageQueueId_t qCommandQueueHandle;
 const osMessageQueueAttr_t qCommandQueue_attributes = {
@@ -164,6 +171,7 @@ void StartPS2DataUpdate(void *argument);
 void StartRobotArm(void *argument);
 void StartAttachment(void *argument);
 void StartBluetooth(void *argument);
+void StartTESTING_THREAD(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -270,6 +278,9 @@ int main(void)
 
   /* creation of Bluetooth */
   BluetoothHandle = osThreadNew(StartBluetooth, NULL, &Bluetooth_attributes);
+
+  /* creation of TESTING_THREAD */
+  TESTING_THREADHandle = osThreadNew(StartTESTING_THREAD, NULL, &TESTING_THREAD_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -781,6 +792,10 @@ inline uint16_t TransmitReceiveCommand(uint8_t cmd, uint8_t data)
   {
     tempCmd = (uint16_t)(cmd << 8) | data;
   }
+  else if (cmd == 0x20 || cmd == 0x21 || cmd == 0x22 || cmd == 0x23 || cmd == 0x24 || cmd == 0x25 || cmd == 0x27)
+  {
+    tempCmd = (uint16_t)(cmd << 8) | data;
+  }
   else
   {
     tempCmd = (uint16_t)(cmd << 8);
@@ -793,12 +808,12 @@ inline uint16_t TransmitReceiveCommand(uint8_t cmd, uint8_t data)
 
   // Receiving the message has a 5 ms delay so to make sure it doesnt hang, yield the thread this is called in to free resources
   osThreadYield();
+
   // Wait for response
   osMessageQueueGet(qResponseQueueHandle, (uint16_t *)&rsp, 0U, osWaitForever);
 
   // // return the response/result of command
   osMutexRelease(mAttachmentCommandHandle);
-  HAL_UART_Transmit(&huart2, (uint8_t *)&rsp, 2, 1);
   return rsp;
 }
 
@@ -1146,15 +1161,16 @@ void StartAttachment(void *argument)
       // The mutex can be released here as it is no longer needed to be held. Helps free up time
       osMutexRelease(mPS2DataHandle);
       osMessageQueueGet(qCommandQueueHandle, (uint16_t *)&attachmentCommand, 0U, 0U);
-      temp = (uint8_t)(received & 0xFF);
-      ID = (received >> 8);
-      ID |= ((uint16_t)temp << 8);
     }
 
     asm("nop");
-
+    uint8_t c = (uint8_t)(attachmentCommand >> 8);
     // If the command is Set Index or Send Data to Index, the whole 16 bits is needed
     if (0x2000 > attachmentCommand && attachmentCommand > 0x0FFF)
+    {
+      transmit = attachmentCommand;
+    }
+    else if (c == 0x20 || c == 0x21 || c == 0x22 || c == 0x23 || c == 0x24 || c == 0x25 || c == 0x27)
     {
       transmit = attachmentCommand;
     }
@@ -1314,7 +1330,6 @@ void StartAttachment(void *argument)
           }
           break;
         case Disconnected:
-          asm("nop");
           if ((uint8_t)(received & 0xFF) == 0xAA)
           {
             curState = Input;
@@ -1370,26 +1385,71 @@ void StartBluetooth(void *argument)
     // The notification indicates that data has been received.
     // If ulTaskNotifyTake returns a value greater than 0,
     // it means a notification was received successfully.
-
-    // if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
-    // {
-    //   // Prepare to receive more data
-    //   HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
-    // }
-
-    // COMMAND SYSTEM TESTING HERE SINCE WE ARE PHASING OUT PHYSICAL CONTROLLER
-    if (Is_DPad_Pressed(&ps2, DUP))
+    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
-      TransmitReceiveCommand(0x18, 0xFF);
+      // Prepare to receive more data
+      HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
     }
-    else if (Is_DPad_Pressed(&ps2, DDOWN))
-    {
-      TransmitReceiveCommand(128, 0);
-    }
-
     osDelay(1);
   }
   /* USER CODE END StartBluetooth */
+}
+
+/* USER CODE BEGIN Header_StartTESTING_THREAD */
+/**
+ * @brief Function implementing the TESTING_THREAD thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartTESTING_THREAD */
+void StartTESTING_THREAD(void *argument)
+{
+  /* USER CODE BEGIN StartTESTING_THREAD */
+  /* Infinite loop */
+  int i = 0;
+  uint8_t t = 0;
+  uint8_t array[24] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'};
+  for (;;)
+  {
+    // COMMAND SYSTEM TESTING HERE SINCE WE ARE PHASING OUT PHYSICAL CONTROLLER
+    if (Is_DPad_Pressed(&ps2, DUP))
+    {
+      // Set Max Range
+      TransmitReceiveCommand(0x24, 46);
+    }
+    else if (Is_DPad_Pressed(&ps2, DDOWN))
+    {
+      // Set Min Range
+      TransmitReceiveCommand(0x25, 20);
+    }
+    else if (Is_DPad_Pressed(&ps2, DLEFT))
+    {
+      // send data
+      if (i < 25)
+      {
+        TransmitReceiveCommand(0x20, array[i]);
+        i++;
+      }
+    }
+    else if (Is_DPad_Pressed(&ps2, DRIGHT))
+    {
+      // receive data
+      if (i < 25)
+      {
+        t = TransmitReceiveCommand(0x28, 0);
+        HAL_UART_Transmit(&huart2, (uint8_t *)&t, 1, 1);
+        i++;
+      }
+    }
+    else if (Is_Button_Pressed(&ps2, SQUARE))
+    {
+      // reset currentindex to 20
+      TransmitReceiveCommand(0x23, 20);
+      i = 0;
+    }
+    osDelay(5);
+  }
+  /* USER CODE END StartTESTING_THREAD */
 }
 
 /**
