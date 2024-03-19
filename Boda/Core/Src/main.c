@@ -92,23 +92,50 @@ const osThreadAttr_t Bluetooth_attributes = {
     .stack_size = 128 * 4,
     .priority = (osPriority_t)osPriorityHigh,
 };
+/* Definitions for TESTING_THREAD */
+osThreadId_t TESTING_THREADHandle;
+const osThreadAttr_t TESTING_THREAD_attributes = {
+    .name = "TESTING_THREAD",
+    .stack_size = 128 * 4,
+    .priority = (osPriority_t)osPriorityHigh,
+};
+/* Definitions for qCommandQueue */
+osMessageQueueId_t qCommandQueueHandle;
+const osMessageQueueAttr_t qCommandQueue_attributes = {
+    .name = "qCommandQueue"};
+/* Definitions for qResponseQueue */
+osMessageQueueId_t qResponseQueueHandle;
+const osMessageQueueAttr_t qResponseQueue_attributes = {
+    .name = "qResponseQueue"};
 /* Definitions for mPS2Data */
 osMutexId_t mPS2DataHandle;
 const osMutexAttr_t mPS2Data_attributes = {
     .name = "mPS2Data"};
-/* Definitions for mAttachmentData */
-osMutexId_t mAttachmentDataHandle;
-const osMutexAttr_t mAttachmentData_attributes = {
-    .name = "mAttachmentData"};
+/* Definitions for mAttachmentCommand */
+osMutexId_t mAttachmentCommandHandle;
+const osMutexAttr_t mAttachmentCommand_attributes = {
+    .name = "mAttachmentCommand"};
 /* USER CODE BEGIN PV */
 
 PS2ControllerHandler ps2;
+uint16_t attachmentCommand = 0;
+bool attachmentConnected = false;
+
+enum States
+{
+  Wait,
+  Identify,
+  Connecting,
+  Input,
+  Await,
+  Disconnected
+};
+
 float rpm = 300;
 short microsteps = FULL_STEPS;
 double deg = 20;
 const short spr = 200; // Steps per revolution
 
-// Variables for PS2
 uint8_t vert_val;
 uint8_t horiz_val;
 // volatile uint8_t receivedFlag = 0; // Flag to indicate data reception
@@ -144,10 +171,13 @@ void StartPS2DataUpdate(void *argument);
 void StartRobotArm(void *argument);
 void StartAttachment(void *argument);
 void StartBluetooth(void *argument);
+void StartTESTING_THREAD(void *argument);
 
 /* USER CODE BEGIN PFP */
 
 void PS2_Init(PS2ControllerHandler *ps2);
+
+uint16_t TransmitReceiveCommand(uint8_t cmd, uint8_t data);
 
 /* USER CODE END PFP */
 
@@ -210,8 +240,8 @@ int main(void)
   /* creation of mPS2Data */
   mPS2DataHandle = osMutexNew(&mPS2Data_attributes);
 
-  /* creation of mAttachmentData */
-  mAttachmentDataHandle = osMutexNew(&mAttachmentData_attributes);
+  /* creation of mAttachmentCommand */
+  mAttachmentCommandHandle = osMutexNew(&mAttachmentCommand_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -224,6 +254,13 @@ int main(void)
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* creation of qCommandQueue */
+  qCommandQueueHandle = osMessageQueueNew(16, sizeof(uint16_t), &qCommandQueue_attributes);
+
+  /* creation of qResponseQueue */
+  qResponseQueueHandle = osMessageQueueNew(16, sizeof(uint16_t), &qResponseQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -241,6 +278,9 @@ int main(void)
 
   /* creation of Bluetooth */
   BluetoothHandle = osThreadNew(StartBluetooth, NULL, &Bluetooth_attributes);
+
+  /* creation of TESTING_THREAD */
+  TESTING_THREADHandle = osThreadNew(StartTESTING_THREAD, NULL, &TESTING_THREAD_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -698,11 +738,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
   // Determine which motor's timer has elapsed
   if (htim->Instance == motor1->timer->Instance)
+  {
     current_motor = motor1;
+  }
   else if (htim->Instance == motor2->timer->Instance)
+  {
     current_motor = motor2;
+  }
   else if (htim->Instance == motor3->timer->Instance)
+  {
     current_motor = motor3;
+  }
   // Add conditions for motor3 and motor4 if needed
 
   if (current_motor)
@@ -730,6 +776,45 @@ void PS2_Init(PS2ControllerHandler *ps2)
   ps2->spi = &hspi2;
   ps2->tim = &htim1;
   HAL_GPIO_WritePin(ps2->Ack_GPIO, ps2->Ack_PIN, GPIO_PIN_SET);
+}
+
+inline uint16_t TransmitReceiveCommand(uint8_t cmd, uint8_t data)
+{
+  if (attachmentConnected == false)
+  {
+    return 0;
+  }
+
+  uint16_t rsp = 0;
+  uint16_t tempCmd = 0;
+  // if the command is either set address or send index, 16 bits is needed to be sent
+  if (0x20 > cmd && cmd > 0x0F)
+  {
+    tempCmd = (uint16_t)(cmd << 8) | data;
+  }
+  else if (cmd == 0x20 || cmd == 0x21 || cmd == 0x22 || cmd == 0x23 || cmd == 0x24 || cmd == 0x25 || cmd == 0x27)
+  {
+    tempCmd = (uint16_t)(cmd << 8) | data;
+  }
+  else
+  {
+    tempCmd = (uint16_t)(cmd << 8);
+  }
+  // // get the awaiting response mutex
+  osMutexWait(mAttachmentCommandHandle, 50);
+
+  // // set the command
+  osMessageQueuePut(qCommandQueueHandle, (uint16_t *)&tempCmd, 0U, 50);
+
+  // Receiving the message has a 5 ms delay so to make sure it doesnt hang, yield the thread this is called in to free resources
+  osThreadYield();
+
+  // Wait for response
+  osMessageQueueGet(qResponseQueueHandle, (uint16_t *)&rsp, 0U, osWaitForever);
+
+  // // return the response/result of command
+  osMutexRelease(mAttachmentCommandHandle);
+  return rsp;
 }
 
 /* USER CODE END 4 */
@@ -993,48 +1078,22 @@ void StartAttachment(void *argument)
 {
   /* USER CODE BEGIN StartAttachment */
 
-  /*****
-   * TODO:
-   *  - Enum the states of the commection protocol
-   *    - Wait :
-   *        > While the received SPI transmission is 0 send command 0x64
-   *    - Conntecting :
-   *        > After a response is received for the first time, ask for the buttons it would like to use as inputs
-   *        > Will be 8 transmissions, one for each button? or 4 with two buttons being sent at the same time.
-   *    - Input:
-   *        > Will now send SPI transactions every milisecond to get the WHO_AM_I response
-   *        > IF nothing is received -> go to the disconnected state
-   *        > If there is something to transmit, go to command or input
-   *    - Disconnected:
-   *        > Any memory stuff to make sure it recognizes that it isnt connected anymore
-   */
-
   /* Infinite loop */
   uint16_t transmit = 0;
   uint16_t received = 0;
   uint8_t lowByte;
   uint8_t highByte;
-  uint8_t command = 0x64;
-
-  enum States
-  {
-    Wait,
-    Identify,
-    Connecting,
-    Input,
-    Disconnected
-  };
 
   enum States curState = Wait;
+  enum States prevState = Wait;
 
-  uint8_t buttons[8] = {R1, R2, L1, L2, X, CIRCLE, SQUARE, TRIANGLE};
+  uint8_t buttons[8] = {X, X, X, X, X, X, X, X};
   uint8_t buttonsBuffer[9] = {0, 0, 0, 0, 0, 0, 0, 0, '\n'};
   uint8_t buffer[3] = {0, 0, '\n'};
   uint8_t buttonsGotten = 0;
 
-  bool awaitResponse = false;
-  uint8_t commandDelay = 0;
-  uint8_t baseDelay = 3;
+  uint8_t tempDelay = 0;
+  uint8_t baseDelay = 4;
 
   uint8_t temp = 0;
   uint16_t ID = 0;
@@ -1043,241 +1102,255 @@ void StartAttachment(void *argument)
   for (;;)
   {
     transmit = 0;
-
-    // Set the proper commmand settings for the current state
-    if (awaitResponse == false)
+    switch (curState)
     {
-      switch (curState)
+    case Wait:
+      // always waiting for a response with no delay: Waiting for 0x01 received
+      attachmentCommand = 0;
+      buttonsGotten = 0;
+      attachmentConnected = false;
+      ID = 0;
+      break;
+    case Identify:
+      attachmentCommand = 0x6400;
+      buttonsGotten = 0;
+      break;
+    case Connecting:
+      if (buttonsGotten == 0)
       {
-      case Wait:
-        // always waiting for a response with no delay: Waiting for 0x01 received
-        command = 0;
-        awaitResponse = true;
-        commandDelay = 0;
-        buttonsGotten = 0;
-        ID = 0;
-        break;
-      case Identify:
-        command = 0x64;
-        commandDelay = baseDelay;
-        awaitResponse = true;
-        buttonsGotten = 0;
-        break;
-      case Connecting:
-        if (buttonsGotten == 0)
-        {
-          command = 0x01;
-        }
-        else if (buttonsGotten == 2)
-        {
-          command = 0x02;
-        }
-        else if (buttonsGotten == 4)
-        {
-          command = 0x03;
-        }
-        else if (buttonsGotten == 6)
-        {
-          command = 0x04;
-        }
-        commandDelay = baseDelay;
-        awaitResponse = true;
-        break;
-      case Input:
-        command = 0;
-        commandDelay = 0;
-        awaitResponse = false;
-        // Get the PS2Data Mutex
-        osMutexWait(mPS2DataHandle, 10);
-        for (int i = 0; i < 8; i++)
-        {
-          transmit |= (Is_Button_Pressed(&ps2, buttons[i]) << i);
-        }
-        // The mutex can be released here as it is no longer needed to be held. Helps free up time
-        osMutexRelease(mPS2DataHandle);
-        break;
-      case Disconnected:
-        // send the emergency response command
-        command = 0x0E;
-        awaitResponse = true;
-        commandDelay = baseDelay;
-        break;
-      default:
-        break;
+        attachmentCommand = 0x0100;
       }
+      else if (buttonsGotten == 2)
+      {
+        attachmentCommand = 0x0200;
+      }
+      else if (buttonsGotten == 4)
+      {
+        attachmentCommand = 0x0300;
+      }
+      else if (buttonsGotten == 6)
+      {
+        attachmentCommand = 0x0400;
+      }
+      attachmentConnected = false;
+      break;
+    case Input:
+      attachmentConnected = true;
+      break;
+    case Await:
+      break;
+    case Disconnected:
+      // send the emergency response command
+      attachmentCommand = 0x0E00;
+      attachmentConnected = false;
+      break;
+    default:
+      break;
+    }
+    // If an attachment is connected, send the inputs
+    if (attachmentConnected)
+    {
+      // Get the PS2Data Mutex
+      osMutexWait(mPS2DataHandle, 10);
+      for (int i = 0; i < 8; i++)
+      {
+        // Get the states of the buttons the controller wants
+        transmit |= (Is_Button_Pressed(&ps2, buttons[i]) << i);
+      }
+
+      // The mutex can be released here as it is no longer needed to be held. Helps free up time
+      osMutexRelease(mPS2DataHandle);
+      osMessageQueueGet(qCommandQueueHandle, (uint16_t *)&attachmentCommand, 0U, 0U);
     }
 
-    transmit |= ((uint16_t)(command) << 8);
+    asm("nop");
+    uint8_t c = (uint8_t)(attachmentCommand >> 8);
+    // If the command is Set Index or Send Data to Index, the whole 16 bits is needed
+    if (0x2000 > attachmentCommand && attachmentCommand > 0x0FFF)
+    {
+      transmit = attachmentCommand;
+    }
+    else if (c == 0x20 || c == 0x21 || c == 0x22 || c == 0x23 || c == 0x24 || c == 0x25 || c == 0x27)
+    {
+      transmit = attachmentCommand;
+    }
+    // else, set the command to be transmitted
+    else
+    {
+      transmit |= attachmentCommand;
+    }
+
     // Transmit the Input, Send Command
     HAL_GPIO_WritePin(Attachment_GPIO_GPIO_Port, Attachment_GPIO_Pin, GPIO_PIN_RESET);
     HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)&transmit, (uint8_t *)&received, 1, 1);
     HAL_GPIO_WritePin(Attachment_GPIO_GPIO_Port, Attachment_GPIO_Pin, GPIO_PIN_SET);
 
-    // check for Disconnection, receiving 0 is always bad:
-    if (received == 0 && curState != Wait && curState != Disconnected)
+    // check for Disconnection, receiving 0 is always bad unless its data:
+    if (received == 0 && curState != Wait && prevState != Disconnected && curState != Disconnected)
     {
       curState = Disconnected;
-      awaitResponse = false;
     }
-    // if a command is waiting for a response, and there is still a delay, decrease the delay
-    else if (awaitResponse == true && commandDelay > 0)
+    else if (tempDelay > 0)
     {
-      commandDelay--;
+      tempDelay--;
     }
-    // Whether or not a response is waiting to be received, though if one is, the delay is over
     else
     {
       // check/change states
       switch (curState)
       {
       case Wait:
+        osMessageQueueReset(qCommandQueueHandle);
+        osMessageQueueReset(qResponseQueueHandle);
         // if the 0x01 we wanted is received:
-        if (received == 0x01)
+        if (received == 0x0001)
         {
+          prevState = curState;
           curState = Identify;
+          tempDelay = baseDelay;
         }
-
         break;
       case Identify:
-        // if response is valid?
-        if (received != 0x01)
-        {
-          curState = Connecting;
-
-          temp = (uint8_t)(received & 0xFF);
-          ID = (received >> 8);
-          ID |= ((uint16_t)temp << 8);
-          // Test Code ------------------------------
-          HAL_UART_Transmit(&huart2, "\nID: ", 6, 1);
-          HAL_UART_Transmit(&huart2, (uint8_t *)&ID, 2, 1);
-          HAL_UART_Transmit(&huart2, "\n", 1, 1);
-          // Test Code ------------------------------
-        }
-        else
-        {
-          curState = Wait;
-        }
+        prevState = curState;
+        curState = Await;
+        tempDelay = baseDelay;
         break;
       case Connecting:
-
-        // TEST CODE---------------------------------------------
-        // for (int i = 0; i < 2; i++)
-        // {
-        //   if (i == 0)
-        //   {
-        //     temp = (uint8_t)(received & 0xFF);
-        //   }
-        //   else
-        //   {
-        //     temp = (uint8_t)((received >> 8) & 0xFF);
-        //   }
-        //   switch (temp)
-        //   {
-        //   case X:
-        //     buffer[i] = 'X';
-        //     break;
-        //   case CIRCLE:
-        //     buffer[i] = 'O';
-        //     break;
-        //   case TRIANGLE:
-        //     buffer[i] = '^';
-        //     break;
-        //   case SQUARE:
-        //     buffer[i] = 'S';
-        //     break;
-        //   case R1:
-        //     buffer[i] = 'r';
-        //     break;
-        //   case R2:
-        //     buffer[i] = 'R';
-        //     break;
-        //   case L1:
-        //     buffer[i] = 'l';
-        //     break;
-        //   case L2:
-        //     buffer[i] = 'L';
-        //     break;
-        //   default:
-        //     buffer[i] = 'G';
-        //     break;
-        //   }
-        // }
-        // HAL_UART_Transmit(&huart2, (uint8_t *)&buffer, 3, 1);
-        // TEST CODE---------------------------------------------
-
-        lowByte = (uint8_t)(received & 0xFF);
-        highByte = (uint8_t)((received >> 8) & 0xFF);
-        // If Not Valid Data Go to Disconnected cause comething might be wrong
-        if (lowByte == X || lowByte == CIRCLE || lowByte == TRIANGLE || lowByte == SQUARE || lowByte == R1 || lowByte == R2 || lowByte == L1 || lowByte == L2)
-        {
-          if (highByte == X || highByte == CIRCLE || highByte == TRIANGLE || highByte == SQUARE || highByte == R1 || highByte == R2 || highByte == L1 || highByte == L2)
-          {
-            buttons[buttonsGotten++] = lowByte;
-            buttons[buttonsGotten++] = highByte;
-          }
-        }
-
-        // If all buttons have been gotten go to Input State
-        if (buttonsGotten == 8)
-        {
-          curState = Input;
-
-          // TEST CODE---------------------------------------------
-          HAL_UART_Transmit(&huart2, "\n", 1, 1);
-          for (int i = 0; i < 8; i++)
-          {
-            switch (buttons[i])
-            {
-            case X:
-              buttonsBuffer[i] = 'X';
-              break;
-            case CIRCLE:
-              buttonsBuffer[i] = 'O';
-              break;
-            case TRIANGLE:
-              buttonsBuffer[i] = '^';
-              break;
-            case SQUARE:
-              buttonsBuffer[i] = 'S';
-              break;
-            case R1:
-              buttonsBuffer[i] = 'r';
-              break;
-            case R2:
-              buttonsBuffer[i] = 'R';
-              break;
-            case L1:
-              buttonsBuffer[i] = 'l';
-              break;
-            case L2:
-              buttonsBuffer[i] = 'L';
-              break;
-            default:
-              buttonsBuffer[i] = 'G';
-              break;
-            }
-          }
-          HAL_UART_Transmit(&huart2, (uint8_t *)&buttonsBuffer, 9, 1);
-          // TEST CODE---------------------------------------------
-        }
+        prevState = curState;
+        curState = Await;
+        tempDelay = baseDelay;
         break;
       case Input:
+        prevState = curState;
+        // get attachment command mutex
+        // if it isnt zero
+        if (attachmentCommand != 0)
+        {
+          attachmentCommand = 0;
+          curState = Await;
+        }
+        break;
+      case Await:
+        // anytime this state is checked, a response to the previously issued command should have been gotten
+
+        // Based on previous state, go to next one
+        switch (prevState)
+        {
+        case Wait:
+          break;
+        case Identify:
+          //  if response is valid?
+          if (received != 0x01)
+          {
+            prevState = curState;
+            curState = Connecting;
+            temp = (uint8_t)(received & 0xFF);
+            ID = (received >> 8);
+            ID |= ((uint16_t)temp << 8);
+
+            // Test Code ------------------------------
+            HAL_UART_Transmit(&huart2, "\nID: ", 6, 1);
+            HAL_UART_Transmit(&huart2, (uint8_t *)&ID, 2, 1);
+            HAL_UART_Transmit(&huart2, "\n", 1, 1);
+            // Test Code ------------------------------
+          }
+          else
+          {
+            prevState = curState;
+            curState = Disconnected;
+          }
+          break;
+        case Connecting:
+          lowByte = (uint8_t)(received & 0xFF);
+          highByte = (uint8_t)((received >> 8) & 0xFF);
+          // If Not Valid Data something might be wrong
+          if (lowByte == X || lowByte == CIRCLE || lowByte == TRIANGLE || lowByte == SQUARE || lowByte == R1 || lowByte == R2 || lowByte == L1 || lowByte == L2)
+          {
+            if (highByte == X || highByte == CIRCLE || highByte == TRIANGLE || highByte == SQUARE || highByte == R1 || highByte == R2 || highByte == L1 || highByte == L2)
+            {
+              buttons[buttonsGotten] = lowByte;
+              buttons[buttonsGotten + 1] = highByte;
+              buttonsGotten += 2;
+              prevState = curState;
+              curState = Connecting;
+            }
+          }
+
+          // If all buttons have been gotten go to Input State
+          if (buttonsGotten == 8)
+          {
+            prevState = curState;
+            curState = Input;
+            attachmentConnected = true;
+            // TEST CODE---------------------------------------------
+            // HAL_UART_Transmit(&huart2, "\n", 1, 1);
+            // for (int i = 0; i < 8; i++)
+            // {
+            //   switch (buttons[i])
+            //   {
+            //   case X:
+            //     buttonsBuffer[i] = 'X';
+            //     break;
+            //   case CIRCLE:
+            //     buttonsBuffer[i] = 'O';
+            //     break;
+            //   case TRIANGLE:
+            //     buttonsBuffer[i] = '^';
+            //     break;
+            //   case SQUARE:
+            //     buttonsBuffer[i] = 'S';
+            //     break;
+            //   case R1:
+            //     buttonsBuffer[i] = 'r';
+            //     break;
+            //   case R2:
+            //     buttonsBuffer[i] = 'R';
+            //     break;
+            //   case L1:
+            //     buttonsBuffer[i] = 'l';
+            //     break;
+            //   case L2:
+            //     buttonsBuffer[i] = 'L';
+            //     break;
+            //   default:
+            //     buttonsBuffer[i] = 'G';
+            //     break;
+            //   }
+            // }
+            // HAL_UART_Transmit(&huart2, (uint8_t *)&buttonsBuffer, 9, 1);
+            // TEST CODE---------------------------------------------
+          }
+          break;
+        case Input:
+          attachmentConnected = true;
+          if (attachmentCommand != 0)
+          {
+            osMessageQueuePut(qResponseQueueHandle, (uint16_t *)&received, 0U, 0U);
+            attachmentCommand = 0;
+          }
+          break;
+        case Disconnected:
+          if ((uint8_t)(received & 0xFF) == 0xAA)
+          {
+            curState = Input;
+          }
+          else
+          {
+            curState = Wait;
+          }
+          break;
+        default:
+          break;
+        }
         break;
       case Disconnected:
-        if (received == 0xAA)
-        {
-          curState = Input;
-        }
-        else
-        {
-          curState = Wait;
-        }
+        prevState = curState;
+        curState = Await;
+        tempDelay = baseDelay;
         break;
       default:
         break;
       }
-      awaitResponse = false;
-      received = 0;
     }
 
     osDelay(1);
@@ -1317,10 +1390,66 @@ void StartBluetooth(void *argument)
       // Prepare to receive more data
       HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
     }
-
     osDelay(1);
   }
   /* USER CODE END StartBluetooth */
+}
+
+/* USER CODE BEGIN Header_StartTESTING_THREAD */
+/**
+ * @brief Function implementing the TESTING_THREAD thread.
+ * @param argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartTESTING_THREAD */
+void StartTESTING_THREAD(void *argument)
+{
+  /* USER CODE BEGIN StartTESTING_THREAD */
+  /* Infinite loop */
+  int i = 0;
+  uint8_t t = 0;
+  uint8_t array[24] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'};
+  for (;;)
+  {
+    // COMMAND SYSTEM TESTING HERE SINCE WE ARE PHASING OUT PHYSICAL CONTROLLER
+    if (Is_DPad_Pressed(&ps2, DUP))
+    {
+      // Set Max Range
+      TransmitReceiveCommand(0x24, 46);
+    }
+    else if (Is_DPad_Pressed(&ps2, DDOWN))
+    {
+      // Set Min Range
+      TransmitReceiveCommand(0x25, 20);
+    }
+    else if (Is_DPad_Pressed(&ps2, DLEFT))
+    {
+      // send data
+      if (i < 25)
+      {
+        TransmitReceiveCommand(0x20, array[i]);
+        i++;
+      }
+    }
+    else if (Is_DPad_Pressed(&ps2, DRIGHT))
+    {
+      // receive data
+      if (i < 25)
+      {
+        t = TransmitReceiveCommand(0x28, 0);
+        HAL_UART_Transmit(&huart2, (uint8_t *)&t, 1, 1);
+        i++;
+      }
+    }
+    else if (Is_Button_Pressed(&ps2, SQUARE))
+    {
+      // reset currentindex to 20
+      TransmitReceiveCommand(0x23, 20);
+      i = 0;
+    }
+    osDelay(5);
+  }
+  /* USER CODE END StartTESTING_THREAD */
 }
 
 /**
