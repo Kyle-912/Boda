@@ -118,7 +118,6 @@ const osMutexAttr_t mAttachmentCommand_attributes = {
 /* USER CODE BEGIN PV */
 
 PS2ControllerHandler ps2;
-uint16_t attachmentCommand = 0;
 bool attachmentConnected = false;
 
 enum States
@@ -787,7 +786,7 @@ inline uint16_t TransmitReceiveCommand(uint8_t cmd, uint8_t data)
 
   uint16_t rsp = 0;
   uint16_t tempCmd = 0;
-  // if the command is either set address or send index, 16 bits is needed to be sent
+  // Checking for commands that require 16 bits to transfer
   if (0x20 > cmd && cmd > 0x0F)
   {
     tempCmd = (uint16_t)(cmd << 8) | data;
@@ -1091,9 +1090,10 @@ void StartAttachment(void *argument)
   uint8_t buttonsBuffer[9] = {0, 0, 0, 0, 0, 0, 0, 0, '\n'};
   uint8_t buffer[3] = {0, 0, '\n'};
   uint8_t buttonsGotten = 0;
+  uint16_t attachmentCommand = 0;
 
-  uint8_t tempDelay = 0;
-  uint8_t baseDelay = 4;
+  uint8_t responseDelay = 0;
+  uint8_t baseDelay = 5;
 
   uint8_t temp = 0;
   uint16_t ID = 0;
@@ -1190,9 +1190,9 @@ void StartAttachment(void *argument)
     {
       curState = Disconnected;
     }
-    else if (tempDelay > 0)
+    else if (responseDelay > 0)
     {
-      tempDelay--;
+      responseDelay--;
     }
     else
     {
@@ -1207,23 +1207,21 @@ void StartAttachment(void *argument)
         {
           prevState = curState;
           curState = Identify;
-          tempDelay = baseDelay;
+          responseDelay = baseDelay;
         }
         break;
       case Identify:
         prevState = curState;
         curState = Await;
-        tempDelay = baseDelay;
+        responseDelay = baseDelay;
         break;
       case Connecting:
         prevState = curState;
         curState = Await;
-        tempDelay = baseDelay;
+        responseDelay = baseDelay;
         break;
       case Input:
         prevState = curState;
-        // get attachment command mutex
-        // if it isnt zero
         if (attachmentCommand != 0)
         {
           attachmentCommand = 0;
@@ -1346,7 +1344,7 @@ void StartAttachment(void *argument)
       case Disconnected:
         prevState = curState;
         curState = Await;
-        tempDelay = baseDelay;
+        responseDelay = baseDelay;
         break;
       default:
         break;
