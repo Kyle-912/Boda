@@ -36,14 +36,52 @@ class _AttachmentWrapperState extends State<AttachmentWrapper> {
 }
 
   Widget _buildTypeAUI() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
-        Text(
-          'UI for Type A',
-          style: TextStyle(fontSize: 20),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Row(
+              children: [
+                _buildButton()
+              ],
+            ),
+            Row(
+              children: [
+                _buildButton(),
+                _buildButton(),
+              ],
+            ),
+            Row(
+              children: [
+                _buildButton(),
+              ],
+            ),
+          ],
         ),
-        // Add more widgets for Type A UI
+            // Second column for diamond pattern
+        Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Row(
+              children: [
+                _buildRoundButton('Y')
+              ],
+            ),
+            Row(
+              children: [
+                _buildRoundButton('X'),
+                _buildRoundButton('B'),
+              ],
+            ),
+            Row(
+              children: [
+                _buildRoundButton('A'),
+              ],
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -79,10 +117,40 @@ class _AttachmentWrapperState extends State<AttachmentWrapper> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         Text(
-          'Default UI',
+          'Please connect an attachment',
           style: TextStyle(fontSize: 20),
         ),
-        // Add more widgets for the default UI
+        // Add more widgets for Type B UI
       ],
     );
   }
+
+  Widget _buildButton() {
+  return Padding(
+    padding: const EdgeInsets.all(8.0),
+    child: ElevatedButton(
+      onPressed: () {},
+      child: Text('Action N'),
+    ),
+  );
+}
+
+  Widget _buildRoundButton(String label) {
+  return Padding(
+    padding: const EdgeInsets.all(1.0),
+    child: ClipOval(
+      child: ElevatedButton(
+        onPressed: () {},
+        child: Container(
+          width: 45, // Set the width and height to the same value for a circle
+          height: 45,
+          alignment: Alignment.center,
+          child: Text(label),
+        ),
+        style: ElevatedButton.styleFrom(
+          shape: CircleBorder(), 
+        ),
+      ),
+    ),
+  );
+}

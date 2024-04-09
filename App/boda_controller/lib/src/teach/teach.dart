@@ -1,6 +1,5 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
+import 'package:boda_controller/src/globals.dart'; // Assuming this is where pointsNotifier is defined
 
 class TeachPage extends StatefulWidget {
   @override
@@ -9,6 +8,10 @@ class TeachPage extends StatefulWidget {
 
 class _TeachPageState extends State<TeachPage> {
 
+  void _deletePoint(int index) {
+    pointsNotifier.value = List.from(pointsNotifier.value)..removeAt(index);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,14 +19,34 @@ class _TeachPageState extends State<TeachPage> {
         title: Text('Teach Page'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'UI to teach robot different set points',
-              style: TextStyle(fontSize: 20),
-            ),
-          ],
+        child: ValueListenableBuilder<List<String>>(
+          valueListenable: pointsNotifier,
+          builder: (context, points, child) {
+            if (points.isEmpty) {
+              return Text(
+                'No saved positions available',
+                style: TextStyle(fontSize: 20),
+              );
+            } else {
+              return ListView.builder(
+                itemCount: points.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(
+                      points[index],
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        _deletePoint(index);
+                      },
+                    ),
+                  );
+                },
+              );
+            }
+          },
         ),
       ),
     );

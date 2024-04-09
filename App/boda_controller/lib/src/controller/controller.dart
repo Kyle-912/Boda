@@ -62,6 +62,8 @@ class _ControllerState extends State<_Controller> {
   double _shoulderRotation = 1.0; // Initial slider value
   double _elbowVertical = 1.0; // Initial slider value
 
+  bool _savePoint = false;
+
   // Method to toggle shoulder vertical up
   void _toggleShoulderVerticalUp() {
     setState(() {
@@ -110,21 +112,36 @@ class _ControllerState extends State<_Controller> {
   void _updateBleMsg(){
     if(widget.bleUpdate.connectionState == DeviceConnectionState.connected) {
       _bleMsg = '';
-      _bleMsg += _shoulderVerticalUp == true ? "U" : 
-                _shoulderVerticalDown == true ? "D" : 
-                "N";
-      _bleMsg += String.fromCharCode(_shoulderVertical.toInt());
-      _bleMsg += _shoulderRotationClockwise == true ? "F" : 
-                _shoulderRotation == true ? "B" : 
-                "N";
-      _bleMsg += String.fromCharCode(_shoulderRotation.toInt());
-      _bleMsg += _elbowUp== true ? "F" : 
-                _elbowDown == true ? "B" : 
-                "N";
-      _bleMsg += String.fromCharCode(_elbowVertical.toInt());
-      _bleMsg += String.fromCharCode(0);
-      _bleMsg += String.fromCharCode(13);
-      _bleMsg += String.fromCharCode(10);
+      _bleMsg += _shoulderVerticalUp == true ? "C" :  // 1
+                _shoulderVerticalDown == true ? "W" : 
+                "S";
+      _bleMsg += String.fromCharCode(_shoulderVertical.toInt()); // 2
+      _bleMsg += "#"; // 3 
+      _bleMsg += "#"; // 4
+      _bleMsg += _shoulderRotationClockwise == true ? "C" : 
+                _shoulderRotationCounterClockwise == true ? "W" : 
+                "S"; // 5
+      _bleMsg += String.fromCharCode(_shoulderRotation.toInt()); // 6 
+      _bleMsg += "#"; // 7
+      _bleMsg += "#"; // 8
+      _bleMsg += _elbowUp== true ? "C" : 
+                _elbowDown == true ? "W" : 
+                "S"; // 9
+      _bleMsg += String.fromCharCode(_elbowVertical.toInt()); // 10
+      _bleMsg += "#"; // 11 
+      _bleMsg += "#"; // 12
+      _bleMsg += _savePoint == true ? "S" : "#"; // 13
+      setState(() {
+        _savePoint = false;
+      }
+      );
+      _bleMsg += "#"; // 14 
+      _bleMsg += "#"; // 15
+      _bleMsg += "#"; // 16 
+      _bleMsg += "#"; // 17
+      _bleMsg += "#"; // 18 
+      _bleMsg += "#"; // 19
+      _bleMsg += "#"; // 20
       // print(_bleMsg);
       // print(_bleMsg.codeUnits);
     }
@@ -171,10 +188,19 @@ class _ControllerState extends State<_Controller> {
 
   }
 
+  void _addPoint() {
+    setState(() {
+      _savePoint = true;
+      }
+    );
+    pointsNotifier.value = List.from(pointsNotifier.value)..add('Point $pointIdx');
+    pointIdx++;
+  }
+
   @override
   void initState() {
     super.initState();
-    _statusTimer = Timer.periodic(Duration(milliseconds: 1000), (timer) {
+    _statusTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
       _updateStatusString();
     });
   }
@@ -239,6 +265,14 @@ class _ControllerState extends State<_Controller> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8.0), // Adjust based on your design needs
+                              child: _buildSaveButton(),
+                            ),
+                            SizedBox(
+                              height: 8,
+                              width: 8,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0), 
                               child: _buildStopButton(),
                             ),
                           ],
@@ -311,6 +345,17 @@ Widget _buildStopButton() {
   );
 }
 
+Widget _buildSaveButton() {
+  return ElevatedButton(
+    onPressed: _addPoint,
+    style: ElevatedButton.styleFrom(
+      shape: CircleBorder(), 
+      padding: EdgeInsets.all(20), 
+    ),
+    child: Icon(Icons.save_alt), 
+  );
+}
+
  Widget _buildSlider(double value, ValueChanged<double> onChanged, String label) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -324,7 +369,7 @@ Widget _buildStopButton() {
         ),
         Slider(
           value: value,
-          min: 1, // Minimum value set to 0 RPM
+          min: 2, // Minimum value set to 0 RPM
           max: 255, // Maximum value set to 450 RPM
           divisions: 255, 
           label: '${(value/ 255 * 450).floor()} RPM', // Display the value in RPM
