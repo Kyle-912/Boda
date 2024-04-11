@@ -1,7 +1,7 @@
 #include "robot_arm.h"
 #include <stdlib.h>
 #include <math.h>
-#include <stdarg.h> // Include this for variable length arguments
+#include <stdarg.h>  // Include this for variable length arguments
 
 // void init_arm_2(arm* arm, float rpm_, stepper *motor1, stepper *motor2)
 // {
@@ -9,6 +9,7 @@
 //     arm->motors[1] = motor2;
 //     arm->rpm = rpm_;
 //     arm->num_motors = 2;
+
 
 //     arm->num_coords = 0;
 //     for (int i = 0; i < MAX_COORDINATES; i++) {
@@ -59,34 +60,31 @@
 //     }
 // }
 
-void init_arm(arm *arm, float rpm_, int num_motors, ...)
-{
+void init_arm(arm* arm, float rpm_, int num_motors, ...) {
     va_list args;
     va_start(args, num_motors); // Initialize the argument list
 
     arm->num_motors = num_motors; // Set the number of motors
-    arm->rpm = rpm_;              // Initialize RPM
-    arm->num_coords = 0;          // Initialize the number of coordinates
+    arm->rpm = rpm_; // Initialize RPM
+    arm->num_coords = 0; // Initialize the number of coordinates
 
     arm->is_jogging = true;
-
+    
     // Initialize motor pointers
-    for (int i = 0; i < num_motors; i++)
-    {
-        arm->motors[i] = va_arg(args, stepper *);
+    for (int i = 0; i < num_motors; i++) {
+        arm->motors[i] = va_arg(args, stepper*);
     }
 
     va_end(args); // Clean up the argument list
 
     // Initialize coordinates to zero
-    for (int i = 0; i < MAX_COORDINATES; i++)
-    {
-        for (int j = 0; j < MAX_MOTORS; j++)
-        {
+    for (int i = 0; i < MAX_COORDINATES; i++) {
+        for (int j = 0; j < MAX_MOTORS; j++) {
             arm->coordinates[i].steps[j] = 0;
         }
     }
 }
+
 
 // void adjust_motors(float rpm, arm* arm, uint8_t coord)
 // {
@@ -126,7 +124,7 @@ void init_arm(arm *arm, float rpm_, int num_motors, ...)
 
 //     if (time1 > time2)
 //         longest_time = time1;
-//     else
+//     else 
 //         longest_time = time2;
 
 //     float rpm_bottom = (longest_time * 360 / 60);
@@ -145,8 +143,7 @@ void init_arm(arm *arm, float rpm_, int num_motors, ...)
 //     // }
 // }
 
-void adjust_motors_sinusoidal_gen(float rpm, arm *arm, uint8_t coord, double rise_time)
-{
+void adjust_motors_sinusoidal_gen(float rpm, arm* arm, uint8_t coord, double rise_time) {
     // Calculate the delta steps for each motor
 
     // -- POSSIBLE generalized -----------------------------
@@ -154,8 +151,7 @@ void adjust_motors_sinusoidal_gen(float rpm, arm *arm, uint8_t coord, double ris
     int16_t delta_steps[MAX_MOTORS] = {0};
 
     // For Each Motor
-    for (int i = 0; i < arm->num_motors; i++)
-    {
+    for (int i = 0; i < arm->num_motors; i++) {
         // Calculate Delta Steps for motor
         delta_steps[i] = arm->coordinates[coord].steps[i] - arm->motors[i]->step_count;
 
@@ -187,7 +183,7 @@ void adjust_motors_sinusoidal_gen(float rpm, arm *arm, uint8_t coord, double ris
 
         // Set Motor Sleep to HIGH
         HAL_GPIO_WritePin(arm->motors[i]->sleep_port, arm->motors[i]->sleep_pin, SET);
-    }
+    }   
 
     // Start timer for each motor
     for (int i = 0; i < arm->num_motors; i++)
@@ -196,20 +192,19 @@ void adjust_motors_sinusoidal_gen(float rpm, arm *arm, uint8_t coord, double ris
     }
 }
 
-void set_arm_rpm(arm *arm, float rpm_)
+
+void set_arm_rpm(arm* arm, float rpm_)
 {
     arm->rpm = rpm_;
 }
 
-void set_coordinate(arm *arm, uint8_t coord_index, int num_motors, ...)
-{
-    if (coord_index < MAX_COORDINATES)
-    {
+
+void set_coordinate(arm* arm, uint8_t coord_index, int num_motors, ...) {
+    if (coord_index < MAX_COORDINATES) {
         va_list args;
         va_start(args, num_motors); // Initialize the argument list
-
-        for (int i = 0; i < num_motors; i++)
-        {
+        
+        for (int i = 0; i < num_motors; i++) {
             // Read the next argument as an int, then cast it to uint16_t
             arm->coordinates[coord_index].steps[i] = (uint16_t)va_arg(args, int);
         }
@@ -218,41 +213,37 @@ void set_coordinate(arm *arm, uint8_t coord_index, int num_motors, ...)
     }
 }
 
-void del_coordinate(arm *arm)
-{
-    if (arm->num_coords > 0)
-    {
+
+void del_coordinate(arm* arm) {
+    if (arm->num_coords > 0) {
         arm->num_coords--;
-        for (int i = 0; i < MAX_MOTORS; i++)
-        {
+        for (int i = 0; i < MAX_MOTORS; i++) {
             arm->coordinates[arm->num_coords].steps[i] = 0;
         }
     }
 }
 
-void home(arm *arm)
-{
-    for (int i = 0; i < arm->num_motors; i++)
-    {
-        arm->motors[i]->step_count = arm->motors[i]->step_limit / 2;
+
+
+void home(arm* arm) {
+    for (int i = 0; i < arm->num_motors; i++) {
+        arm->motors[i]->step_count = arm->motors[i]->step_limit/2;
     }
 }
 
-void save_coordinate(arm *arm)
-{
-    if (arm->num_coords < MAX_COORDINATES)
-    {
-        for (int i = 0; i < arm->num_motors; i++)
-        {
+void save_coordinate(arm* arm) {
+    if (arm->num_coords < MAX_COORDINATES) {
+        for (int i = 0; i < arm->num_motors; i++) {
             arm->coordinates[arm->num_coords].steps[i] = arm->motors[i]->step_count;
         }
         arm->num_coords++;
     }
 }
 
+
 // Movement Between Set Points
-void move(arm *arm, uint8_t to_coord)
-{
+void move(arm* arm, uint8_t to_coord)
+{   
     // Adjust motors using sinusoidal ramping up/down
     if (to_coord < arm->num_coords)
     {
@@ -261,14 +252,15 @@ void move(arm *arm, uint8_t to_coord)
 }
 
 // Movement Between Set Points with RPM as a parameter
-void move_rpm(arm *arm, uint8_t to_coord, float rpm)
-{
+void move_rpm(arm* arm, uint8_t to_coord, float rpm)
+{   
     // Adjust motors using sinusoidal ramping up/down
     adjust_motors_sinusoidal_gen(rpm, arm, to_coord, 4.0);
 }
 
+
 // period callback function handled by arm driver
-void callback_pulse(arm *arm, TIM_HandleTypeDef *htim)
+void callback_pulse(arm* arm, TIM_HandleTypeDef *htim)
 {
     // Check if timer is from a motor timer
     for (int i = 0; i < arm->num_motors; i++)
@@ -294,7 +286,7 @@ void callback_pulse(arm *arm, TIM_HandleTypeDef *htim)
     }
 }
 
-bool arm_moving(arm *arm)
+bool arm_moving(arm* arm)
 {
     // For Each Motor in Arm
     for (int i = 0; i < arm->num_motors; i++)

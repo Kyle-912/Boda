@@ -12,8 +12,7 @@
 #define RAMP_STEPS 80
 
 // Define the stepper structure
-typedef struct
-{
+typedef struct {
     short steps;
     short dir_state;
     short max_steps;
@@ -25,6 +24,7 @@ typedef struct
     short microsteps;
     float rpm;
     long step_pulse;
+
 
     // -- Vars associated with Sinusoidal RPM  --
     float peak_rpm;
@@ -38,6 +38,10 @@ typedef struct
     volatile bool sinusoidal_ramp;
     float rpm_values[RAMP_STEPS];
     // ------------------------------------------
+
+    bool is_setup;
+    short end_delay;
+
 
     GPIO_TypeDef *dir_port;
     uint16_t dir_pin;
@@ -63,18 +67,21 @@ typedef struct
 // Define constants
 extern const uint8_t MS_TABLE[];
 extern const uint8_t MS_TABLE_SIZE;
-#define STEP_PULSE(steps, microsteps, rpm) (60.0 * 1000000L / steps / microsteps / rpm)
+#define STEP_PULSE(steps, microsteps, rpm) (60.0*1000000L/steps/microsteps/rpm)
 // #define SIMPLIFIED_STEP_PULSE(rpm) (60.0 * 5000L / rpm)
 #define SIMPLIFIED_STEP_PULSE(rpm) (300000L / rpm)
 
+
+
 // Function prototypes
-void init_stepper(stepper *motor, short spr);
+void init_stepper(stepper *motor, short spr, short gear_ratio);
 void init_dir_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_step_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_sleep_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_ms1_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_ms2_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
 void init_ms3_pin(stepper *motor, GPIO_TypeDef *port, uint16_t pin);
+void set_min_rpm(stepper *motor, float rpm);
 void set_microsteps(stepper *motor, short microsteps);
 void set_step_limit(stepper *motor, short max);
 void set_timer(stepper *motor, TIM_HandleTypeDef *timer_);
@@ -89,8 +96,12 @@ void pulse_stepper(stepper *motor);
 void pulse_stepper_sinusoid(stepper *motor);
 void calculate_next_sinusoidal_pulse(stepper *motor);
 
+void end_movement(stepper *motor);
+
 void init_sinusoidal_vars(int total, double peak_rpm, double rise_time, stepper *motor);
 // double calculate_next_sinusoidal_pulse(stepper *motor);
+
+// void set_gear_ratio(stepper *motor, short ratio);
 
 float calculate_rpm_basic_ramp(stepper *motor);
 #endif // A4988_H
