@@ -41,6 +41,7 @@ typedef struct {
 
     bool is_setup;
     short end_delay;
+    bool boundary_reached;
 
 
     GPIO_TypeDef *dir_port;
@@ -95,6 +96,7 @@ void move_stepper_deg(stepper *motor, double deg);
 void pulse_stepper(stepper *motor);
 void pulse_stepper_sinusoid(stepper *motor);
 void calculate_next_sinusoidal_pulse(stepper *motor);
+void motor_off(stepper *motor);
 
 void end_movement(stepper *motor);
 

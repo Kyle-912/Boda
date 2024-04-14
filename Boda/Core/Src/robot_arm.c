@@ -268,6 +268,7 @@ void callback_pulse(arm* arm, TIM_HandleTypeDef *htim)
         // if timer is from a motor timer
         if (htim->Instance == arm->motors[i]->timer->Instance)
         {
+            // pulse_stepper(arm->motors[i]);
             // if jogging, pulse differently
             if (arm->is_jogging)
             {

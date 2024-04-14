@@ -44,20 +44,20 @@
 #define motor1_sleep_pin GPIO_PIN_5
 
 // Motor 2
-// #define motor2_dir_port GPIOA
-// #define motor2_dir_pin GPIO_PIN_6
-// #define motor2_step_port GPIOA
-// #define motor2_step_pin GPIO_PIN_7
-// #define motor2_sleep_port GPIOB
-// #define motor2_sleep_pin GPIO_PIN_6
+#define motor2_dir_port GPIOA
+#define motor2_dir_pin GPIO_PIN_6
+#define motor2_step_port GPIOA
+#define motor2_step_pin GPIO_PIN_7
+#define motor2_sleep_port GPIOB
+#define motor2_sleep_pin GPIO_PIN_6
 
 
-#define motor3_dir_port GPIOA
-#define motor3_dir_pin GPIO_PIN_6
-#define motor3_step_port GPIOA
-#define motor3_step_pin GPIO_PIN_7
-#define motor3_sleep_port GPIOB
-#define motor3_sleep_pin GPIO_PIN_6
+// #define motor3_dir_port GPIOA
+// #define motor3_dir_pin GPIO_PIN_6
+// #define motor3_step_port GPIOA
+// #define motor3_step_pin GPIO_PIN_7
+// #define motor3_sleep_port GPIOB
+// #define motor3_sleep_pin GPIO_PIN_6
 
 // Motor 3
 // #define motor3_dir_port GPIOB
@@ -67,23 +67,25 @@
 // #define motor3_sleep_port GPIOC
 // #define motor3_sleep_pin GPIO_PIN_14
 
-// #define motor3_dir_port GPIOA
-// #define motor3_dir_pin GPIO_PIN_1
-// #define motor3_step_port GPIOA
-// #define motor3_step_pin GPIO_PIN_4
-// #define motor3_sleep_port GPIOB
-// #define motor3_sleep_pin GPIO_PIN_0
+#define motor3_dir_port GPIOA
+#define motor3_dir_pin GPIO_PIN_1
+#define motor3_step_port GPIOA
+#define motor3_step_pin GPIO_PIN_4
+#define motor3_sleep_port GPIOB
+#define motor3_sleep_pin GPIO_PIN_0
 
-#define motor2_dir_port GPIOA
-#define motor2_dir_pin GPIO_PIN_1
-#define motor2_step_port GPIOA
-#define motor2_step_pin GPIO_PIN_4
-#define motor2_sleep_port GPIOB
-#define motor2_sleep_pin GPIO_PIN_0
+// #define motor2_dir_port GPIOA
+// #define motor2_dir_pin GPIO_PIN_1
+// #define motor2_step_port GPIOA
+// #define motor2_step_pin GPIO_PIN_4
+// #define motor2_sleep_port GPIOB
+// #define motor2_sleep_pin GPIO_PIN_0
 
 
 // Controller Input Processing
 #define UPDATE_BUTTONS_SIGNAL 0x01
+
+#define BUFFER_SIZE 20
 
 /* USER CODE END PTD */
 
@@ -169,11 +171,17 @@ osMutexId_t mAttachmentCommandHandle;
 const osMutexAttr_t mAttachmentCommand_attributes = {
   .name = "mAttachmentCommand"
 };
+/* Definitions for BLE_Mutex */
+osMutexId_t BLE_MutexHandle;
+const osMutexAttr_t BLE_Mutex_attributes = {
+  .name = "BLE_Mutex"
+};
 /* USER CODE BEGIN PV */
 
 PS2ControllerHandler ps2;
 uint16_t attachmentCommand = 0;
 bool attachmentConnected = false;
+uint16_t ID = 0;
 
 enum States
 {
@@ -184,6 +192,9 @@ enum States
   Await,
   Disconnected
 };
+
+// ======== ATTACHMENT VARIABLES =============
+uint8_t attach_input;
 
 float rpm = 300;
 short microsteps = FULL_STEPS;
@@ -206,7 +217,11 @@ arm *robot_arm;
 
 uint8_t current_coord = 0;
 
-uint8_t RxBuffer[2] = {0}; // Buffer to store data received
+uint8_t RxBuffer[BUFFER_SIZE] = {0}; // Buffer to store data received
+
+uint8_t RxBuffer0[BUFFER_SIZE] = {0};
+
+uint8_t Process_Buffer[BUFFER_SIZE] = {0}; 
 
 /* USER CODE END PV */
 
@@ -296,6 +311,9 @@ int main(void)
 
   /* creation of mAttachmentCommand */
   mAttachmentCommandHandle = osMutexNew(&mAttachmentCommand_attributes);
+
+  /* creation of BLE_Mutex */
+  BLE_MutexHandle = osMutexNew(&BLE_Mutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -779,28 +797,37 @@ static void MX_GPIO_Init(void)
 void jog_motor(stepper *motor, float rpm, bool dir, int cont_amount)
 {
   if (motor->steps_remaining)
+  {
+    motor->steps_remaining = cont_amount;
+  }
+  else
+  {
+    // move_stepper_steps(motor1, 500, 350.0);
+    // set_rpm(motor, rpm);
+    if (dir)
     {
-      motor->steps_remaining = cont_amount;
+      // move_stepper_deg(motor, cont_amount);
+      move_stepper_steps(motor, cont_amount, rpm);
     }
     else
     {
-      // move_stepper_steps(motor1, 500, 350.0);
-      set_rpm(motor, rpm);
-      if (dir)
-      {
-         move_stepper_deg(motor, 30.0);
-      }
-      else
-      {
-        move_stepper_deg(motor, -30.0);
-      }
+      // move_stepper_deg(motor, -1*cont_amount);
+      move_stepper_steps(motor, -1*cont_amount, rpm);
     }
+  }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart->Instance == USART1)
   {
+    osMutexWait(BLE_MutexHandle, 50);
+    for(int i = 0; i < BUFFER_SIZE; i++)
+      {
+          RxBuffer[i] = RxBuffer0[i];
+      }
+    osMutexRelease(BLE_MutexHandle);
+
     // Notify the BLE task that data has been received
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     vTaskNotifyGiveFromISR(BluetoothHandle, &xHigherPriorityTaskWoken);
@@ -912,41 +939,42 @@ void StartRobotArm(void *argument)
   // const short spr = 200; // Steps per revolution
 
   stepper *stepper_motor1 = pvPortMalloc(sizeof(stepper));
-  if (stepper_motor1 == NULL) {
-      // Handle memory allocation error
+  if (stepper_motor1 == NULL)
+  {
+    // Handle memory allocation error
   }
-  
+
   stepper *stepper_motor2 = pvPortMalloc(sizeof(stepper));
-  if (stepper_motor2 == NULL) {
-      // Handle memory allocation error
+  if (stepper_motor2 == NULL)
+  {
+    // Handle memory allocation error
   }
 
   stepper *stepper_motor3 = pvPortMalloc(sizeof(stepper));
-  if (stepper_motor3 == NULL) {
-      // Handle memory allocation error
+  if (stepper_motor3 == NULL)
+  {
+    // Handle memory allocation error
   }
 
   // // Motor 3
   motor3 = stepper_motor3;
-  init_stepper(motor3, 140, 80);
+  init_stepper(motor3, 100, 80);
   init_dir_pin(motor3, motor3_dir_port, motor3_dir_pin);
   init_step_pin(motor3, motor3_step_port, motor3_step_pin);
   init_sleep_pin(motor3, motor3_sleep_port, motor3_sleep_pin);
   set_micro_en(motor3, 0);
   set_timer(motor3, &htim13);
-  set_rpm(motor3, rpm);
-  set_min_rpm(motor1, 40);
+  set_rpm(motor3, 40);
 
   // // Motor 2
   motor2 = stepper_motor2;
-  init_stepper(motor2, 120, 80);
+  init_stepper(motor2, 100, 80);
   init_dir_pin(motor2, motor2_dir_port, motor2_dir_pin);
   init_step_pin(motor2, motor2_step_port, motor2_step_pin);
   init_sleep_pin(motor2, motor2_sleep_port, motor2_sleep_pin);
   set_micro_en(motor2, 0);
   set_timer(motor2, &htim14);
-  set_rpm(motor2, rpm);
-  set_min_rpm(motor1, 40);
+  set_rpm(motor2, 40);
 
   // // Motor 1
   motor1 = stepper_motor1;
@@ -956,10 +984,8 @@ void StartRobotArm(void *argument)
   init_sleep_pin(motor1, motor1_sleep_port, motor1_sleep_pin);
   set_micro_en(motor1, 0);
   set_timer(motor1, &htim3);
-  set_rpm(motor1, rpm);
-  set_min_rpm(motor1, 10);
+  set_rpm(motor1, 10);
   // set_step_limit(motor1, 100);
-
 
   // // Robot Arm
   arm robot_arm_var;
@@ -969,88 +995,135 @@ void StartRobotArm(void *argument)
   home(robot_arm);
   set_arm_rpm(robot_arm, 300);
 
-  uint8_t RxBuffer_prev[2] = {0};
+  // uint8_t RxBuffer_prev[2] = {0};
+
+  // volatile static int Test_RPM = 60;
+  volatile static int M1_RPM = 0;
+  volatile static int M2_RPM = 0;
+  volatile static int M3_RPM = 0;
+
+  volatile static int M3_cont = 0;
+  // bool M1_stopped = true;
+  // bool M2_stopped = true;
+  // bool M3_stopped = true;
+  volatile static uint8_t RxBuffer_PP1 = 0;
+  // volatile static uint8_t press_counter = 0;
+  volatile static int delay = 550;
+
+  motor_off(motor1);
+  motor_off(motor2);
+  motor_off(motor3);
 
   /* Infinite loop */
   for (;;)
   {
+    // Copy from RxBuffer to Process_Buffer
+    // Mutex keeps the buffer from multiple access
+    osMutexWait(BLE_MutexHandle, 50);
+    for(int i = 0; i < BUFFER_SIZE; i++)
+    {
+        Process_Buffer[i] = RxBuffer[i];
+    }
+    osMutexRelease(BLE_MutexHandle);
 
-    // IF jogging bit is set
-    if (RxBuffer[0] & 0x80)
+    // Motor M1-M3 Control
+    // ==========================================================================
+    
+    // M1
+    M1_RPM = Process_Buffer[1];
+    if (Process_Buffer[0] == 'C') // CW
     {
       robot_arm->is_jogging = true;
-      // IF bit for M1 movement set
-      if (RxBuffer[0] & 0x1)
-      {
-        // Check DIR bit and move
-        if (RxBuffer[0] & 0x2)
-        {
-          jog_motor(motor1, 40, 1, 20);
-        }
-        else
-        {
-          jog_motor(motor1, 40, 0, 20);
-        }
-      }
+      jog_motor(motor1, M1_RPM, 1, 20);
+    }
+    else if (Process_Buffer[0] == 'W') // CCW
+    {
+      robot_arm->is_jogging = true;
+      jog_motor(motor1, M1_RPM, 0, 20);
+    }
 
-      // IF bit for M2 movement set
-      if (RxBuffer[0] & 0x4)
-      {
-        // Check DIR bit and move
-        if (RxBuffer[0] & 0x8)
-        {
-          // Check DIR bit and move
-          jog_motor(motor2, 200, 1, 300);
-        }
-        else
-        {
-          jog_motor(motor2, 200, 0, 300);
-        }
-      }
+    // M2
+    M2_RPM = Process_Buffer[5];
+    if (Process_Buffer[4] == 'C') // CW
+    {
+      robot_arm->is_jogging = true;
+      jog_motor(motor2, M2_RPM, 1, 110);
+    }
+    else if (Process_Buffer[4] == 'W') // CCW
+    {
+      robot_arm->is_jogging = true;
+      jog_motor(motor2, M2_RPM, 0, 110);
+    }
 
-      // IF bit for M3 movement set
-      if (RxBuffer[0] & 0x10)
+    // M3
+    M3_RPM = Process_Buffer[9];
+    if (Process_Buffer[8] == 'C') // CW
+    {
+      robot_arm->is_jogging = true;
+      // M3_cont = (int)M3_RPM*2;
+      jog_motor(motor3, M3_RPM, 1, 180);
+    }
+    else if (Process_Buffer[8] == 'W') // CCW
+    {
+      robot_arm->is_jogging = true;
+      // M3_cont = (int)M3_RPM*2;
+      jog_motor(motor3, M3_RPM, 0, 180);
+    }
+    // ==========================================================================
+    
+    // Preset Position (PP) Control
+    // ==========================================================================
+    // PP requires for the motors to be stopped i.e. no steps_remaining
+    if (!motor1->steps_remaining && !motor2->steps_remaining && !motor3->steps_remaining)
+    {
+      // Save Coordinate
+      if (Process_Buffer[12] == 'S')
       {
-        if (RxBuffer[0] & 0x20)
-        {
-          jog_motor(motor3, 200, 1, 300);
-        }
-        else
-        {
-          jog_motor(motor3, 200, 0, 300);
-        }
-      }
-
-      // Save Position to Coordinate
-      if ((RxBuffer[1] & 0x1))
-      {
-        if ((RxBuffer_prev[1] & 0x1) == 0)
+        if (RxBuffer_PP1 != Process_Buffer[12])
         {
           save_coordinate(robot_arm);
+          // char ack_data[12];                     // Buffer to hold the formatted string
+          // sprintf(ack_data, "Hello World");      // Formatting the string into the buffer
+          char ack_data = 'A';
+          // HAL_UART_Transmit(&huart1, &ack_data, sizeof(ack_data), 10);
+          HAL_UART_Transmit(&huart1, &ack_data, 1, 10);
+          osDelay(100);
+          // press_counter++;
         }
       }
-    }
-    // NOT Jogging
-    else
-    {
-      if ((RxBuffer[1] & 0x80))
+      else if (Process_Buffer[12] == 'G')
       {
         robot_arm->is_jogging = false;
-        if (RxBuffer_prev[1] != RxBuffer[1])
+        if (RxBuffer_PP1 != Process_Buffer[12])
         {
-          uint8_t to_coord = (RxBuffer[1] >> 4) - 8;
-          if (robot_arm->num_coords > to_coord)
-          {
-            move(robot_arm, to_coord);
-          }
-        } 
+          move_rpm(robot_arm, Process_Buffer[13], Process_Buffer[14]);
+        }
+        osDelay(1000);
       }
     }
+    // ==========================================================================
+
+    // ATTACHMENT
+    // ==========================================================================
+    if (Process_Buffer[16] = 'A')
+    {
+      uint8_t tempCommand;
+      // COMMAND BYTE
+      tempCommand = Process_Buffer[17];
+      if(tempCommand){
+        TransmitReceiveCommand(tempCommand, 0);
+      }
+
+      // INPUT BYTE
+      attach_input = Process_Buffer[18];
+    }
+
+    // ==========================================================================
 
 
-    RxBuffer_prev[0] = RxBuffer[0];
-    RxBuffer_prev[1] = RxBuffer[1];
-    osDelay(1);
+    // copy buffer to avoid repeated presses
+    RxBuffer_PP1 = Process_Buffer[12];
+
   }
   /* USER CODE END StartRobotArm */
 }
@@ -1084,7 +1157,6 @@ void StartAttachment(void *argument)
   uint8_t baseDelay = 4;
 
   uint8_t temp = 0;
-  uint16_t ID = 0;
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
 
   for (;;)
@@ -1368,7 +1440,7 @@ void StartBluetooth(void *argument)
   HAL_NVIC_EnableIRQ(USART1_IRQn);
 
   // Begin asynchronous reception on USART1 using interrupt mode.
-  HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
+  HAL_UART_Receive_IT(&huart1, RxBuffer0, sizeof(RxBuffer0));
 
   // Task loop
   for (;;)
@@ -1380,7 +1452,7 @@ void StartBluetooth(void *argument)
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
       // Prepare to receive more data
-      HAL_UART_Receive_IT(&huart1, RxBuffer, sizeof(RxBuffer));
+      HAL_UART_Receive_IT(&huart1, RxBuffer0, sizeof(RxBuffer0));
     }
 
     osDelay(1);
@@ -1399,48 +1471,40 @@ void StartTESTING_THREAD(void *argument)
 {
   /* USER CODE BEGIN StartTESTING_THREAD */
   /* Infinite loop */
-  int i = 0;
-  uint8_t t = 0;
-  uint8_t array[24] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x'};
+  uint16_t old_ID = 0;
+  bool sent_update = false;
+  bool new_connect = true;
   for (;;)
   {
-    // COMMAND SYSTEM TESTING HERE SINCE WE ARE PHASING OUT PHYSICAL CONTROLLER
-    if (Is_DPad_Pressed(&ps2, DUP))
+    // if (attachmentConnected && (old_ID != ID))
+    // {
+    //   char attach_ID = ID >> 8;
+    //   HAL_UART_Transmit(&huart1, &attach_ID, 1, 10);
+    //   old_ID = ID;
+    // }
+
+    if (attachmentConnected && new_connect)
     {
-      // Set Max Range
-      TransmitReceiveCommand(0x24, 46);
+      char attach_ID = ID >> 8;
+      HAL_UART_Transmit(&huart1, &attach_ID, 1, 10);
+      new_connect = false;
+      sent_update = false;
     }
-    else if (Is_DPad_Pressed(&ps2, DDOWN))
+    else if (!attachmentConnected)
     {
-      // Set Min Range
-      TransmitReceiveCommand(0x25, 20);
-    }
-    else if (Is_DPad_Pressed(&ps2, DLEFT))
-    {
-      // send data
-      if (i < 25)
+      if (!sent_update)
       {
-        TransmitReceiveCommand(0x20, array[i]);
-        i++;
+        char no_attachment_char = '0';
+        HAL_UART_Transmit(&huart1, &no_attachment_char, 1, 10);
+        sent_update = true;
       }
+      new_connect = true;
     }
-    else if (Is_DPad_Pressed(&ps2, DRIGHT))
-    {
-      // receive data
-      if (i < 25)
-      {
-        t = TransmitReceiveCommand(0x28, 0);
-        HAL_UART_Transmit(&huart2, (uint8_t *)&t, 1, 1);
-        i++;
-      }
-    }
-    else if (Is_Button_Pressed(&ps2, SQUARE))
-    {
-      // reset currentindex to 20
-      TransmitReceiveCommand(0x23, 20);
-      i = 0;
-    }
-    osDelay(5);
+    // else
+    // {
+    //   old_ID = 0;
+    // }
+    osDelay(1);
   }
   // while(1)
   // {
