@@ -9,7 +9,7 @@
 #define MAX_MOTORS 4
 
 typedef struct {
-    uint16_t steps[MAX_MOTORS]; // Array to hold steps for each motor
+    int16_t steps[MAX_MOTORS]; // Array to hold steps for each motor
 } Coordinate;
 
 typedef struct {
@@ -36,13 +36,13 @@ void home(arm* arm);
 void set_arm_rpm(arm* arm, float rpm_);
 
 // Saves the current coordinate of the arm.
-void save_coordinate(arm* arm);
+int16_t save_coordinate(arm* arm);
 
 // Sets a coordinate at a specified index for a variable number of motors.
 void set_coordinate(arm* arm, uint8_t coord_index, int num_motors, ...);
 
 // Deletes the last saved coordinate of the arm.
-void del_coordinate(arm* arm);
+void del_coordinate(arm* arm, int index);
 
 // Moves the arm to a specified coordinate with arm->rpm
 void move(arm* arm, uint8_t to_coord);
@@ -53,6 +53,7 @@ void move_rpm(arm* arm, uint8_t to_coord, float rpm);
 void callback_pulse(arm* arm, TIM_HandleTypeDef *htim);
 
 bool arm_moving(arm* arm);
+
 
 // Assuming these functions are defined elsewhere in your project
 // void init_sinusoidal_vars(int16_t steps, float rpm, double rise_time, stepper* motor);

@@ -80,7 +80,7 @@ void init_arm(arm* arm, float rpm_, int num_motors, ...) {
     // Initialize coordinates to zero
     for (int i = 0; i < MAX_COORDINATES; i++) {
         for (int j = 0; j < MAX_MOTORS; j++) {
-            arm->coordinates[i].steps[j] = 0;
+            arm->coordinates[i].steps[j] = -1;
         }
     }
 }
@@ -214,11 +214,11 @@ void set_coordinate(arm* arm, uint8_t coord_index, int num_motors, ...) {
 }
 
 
-void del_coordinate(arm* arm) {
-    if (arm->num_coords > 0) {
+void del_coordinate(arm* arm, int index) {
+    if (index < arm->num_coords) {
         arm->num_coords--;
         for (int i = 0; i < MAX_MOTORS; i++) {
-            arm->coordinates[arm->num_coords].steps[i] = 0;
+            arm->coordinates[index].steps[i] = -1;
         }
     }
 }
@@ -231,13 +231,29 @@ void home(arm* arm) {
     }
 }
 
-void save_coordinate(arm* arm) {
+int16_t save_coordinate(arm* arm) {
+    int16_t index = -1;
     if (arm->num_coords < MAX_COORDINATES) {
-        for (int i = 0; i < arm->num_motors; i++) {
-            arm->coordinates[arm->num_coords].steps[i] = arm->motors[i]->step_count;
+        for (int j = 0; j < MAX_COORDINATES; j++)
+        {
+            if (arm->coordinates[j].steps[0] == -1)
+            {
+                index = j;
+                break;
+            }
         }
-        arm->num_coords++;
+
+        if (index != -1)
+        {
+            for (int i = 0; i < arm->num_motors; i++) {
+            arm->coordinates[index].steps[i] = arm->motors[i]->step_count;
+            }
+            arm->num_coords++;
+        }
     }
+    // Returns -1 of failure
+    // Returns index of saved point if success
+    return index;
 }
 
 

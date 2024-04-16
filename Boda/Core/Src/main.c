@@ -1081,14 +1081,24 @@ void StartRobotArm(void *argument)
       {
         if (RxBuffer_PP1 != Process_Buffer[12])
         {
-          save_coordinate(robot_arm);
-          // char ack_data[12];                     // Buffer to hold the formatted string
-          // sprintf(ack_data, "Hello World");      // Formatting the string into the buffer
-          char ack_data = 'A';
+          char ack_data[2];
+          ack_data[1] = save_coordinate(robot_arm) + 48;
+          ack_data[0] = 'S';
+
           // HAL_UART_Transmit(&huart1, &ack_data, sizeof(ack_data), 10);
-          HAL_UART_Transmit(&huart1, &ack_data, 1, 10);
+          HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+          // HAL_UART_Transmit(&huart2, &ack_data, 2, 10);
+
+          char motor_val_str[10];
+          // Assuming robot_arm->coordinates[0].steps[0] is an integer that can be more than 9
+          int motor_val = robot_arm->coordinates[0].steps[0];
+          // Convert the integer to a string
+          sprintf(motor_val_str, "%d", motor_val);
+          HAL_UART_Transmit(&huart2, (uint8_t*)motor_val_str, strlen(motor_val_str), 10);
+
+          // motor_val = robot_arm->coordinates[1].steps[0] + 48;
+          // HAL_UART_Transmit(&huart2, &motor_val, 1, 10);
           osDelay(100);
-          // press_counter++;
         }
       }
       else if (Process_Buffer[12] == 'G')
@@ -1096,9 +1106,29 @@ void StartRobotArm(void *argument)
         robot_arm->is_jogging = false;
         if (RxBuffer_PP1 != Process_Buffer[12])
         {
-          move_rpm(robot_arm, Process_Buffer[13], Process_Buffer[14]);
+          char motor_val_str[10];
+          int motor_val = Process_Buffer[13];
+          sprintf(motor_val_str, "%d", motor_val);
+          HAL_UART_Transmit(&huart2, (uint8_t*)motor_val_str, strlen(motor_val_str), 10);
+          if (Process_Buffer[13] < robot_arm->num_coords)
+          {
+            move_rpm(robot_arm, Process_Buffer[13], Process_Buffer[14]);
+          }
         }
         osDelay(1000);
+      }
+      if (Process_Buffer[12] == 'D')
+      {
+        if (RxBuffer_PP1 != Process_Buffer[12])
+        {
+          char ack_data[2];
+          del_coordinate(robot_arm, Process_Buffer[13]);
+          ack_data[0] = 'D';
+          ack_data[1] = Process_Buffer[13] + 48;
+
+          HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+          osDelay(100);
+        }
       }
     }
     // ==========================================================================
