@@ -418,9 +418,7 @@ void pulse_stepper(stepper *motor)
 
 void pulse_stepper_sinusoid(stepper *motor)
 {
-
-    if (motor->steps_remaining <= 0)
-    {
+    if (motor->steps_remaining <= 0) {
         motor->precalculation_done = false;
         HAL_GPIO_WritePin(motor->sleep_port, motor->sleep_pin, RESET);
         HAL_TIM_Base_Stop_IT(motor->timer);
@@ -431,16 +429,14 @@ void pulse_stepper_sinusoid(stepper *motor)
     GPIO_PinState currentPinState = HAL_GPIO_ReadPin(motor->step_port, motor->step_pin);
 
     // IF pin state is set: reset the pin and wait step_pulse
-    if (currentPinState == GPIO_PIN_SET)
-    {
+    if (currentPinState == GPIO_PIN_SET) {
         HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
         calculate_next_sinusoidal_pulse(motor);
         __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->step_pulse);
     }
     // ELSE: set the pin for 20 us
     // We should pull HIGH for at least 1-2us (step_high_min)
-    else
-    {
+    else {
         HAL_GPIO_WritePin(motor->step_port, motor->step_pin, SET);
         __HAL_TIM_SET_AUTORELOAD(motor->timer, 20);
 
@@ -465,10 +461,14 @@ void init_sinusoidal_vars(int total, double peak_rpm, double rise_time, stepper 
     motor->current_step = 1;
     motor->total_steps = total;
     double steps_per_second_at_peak = peak_rpm * motor->max_steps / 60.0;
-    motor->ramp_steps = (int)(rise_time * steps_per_second_at_peak);
+    // motor->ramp_steps = (int)(rise_time * steps_per_second_at_peak);
+
+    motor->ramp_steps = motor->total_steps / 3;
+
     if (2 * motor->ramp_steps > motor->total_steps) {
         motor->ramp_steps = motor->total_steps / 2;
     }
+    
     motor->max_delay = 60.0 / (peak_rpm * motor->max_steps); // Max delay in seconds
 }
 
@@ -495,7 +495,7 @@ void precalculate_ramp_values(stepper *motor) {
         float ramp_up_value = sin(normalized_step - M_PI) + normalized_step;
         motor->rpm_values[i] = fmax((ramp_up_value / M_PI) * motor->peak_rpm, motor->min_rpm);
     }
-    asm("nop");
+    asm("nop"); // Debugging breakpoint
 }
 
 // Function to get RPM based on current step

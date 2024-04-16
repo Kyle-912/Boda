@@ -1034,12 +1034,12 @@ void StartRobotArm(void *argument)
     if (Process_Buffer[0] == 'C') // CW
     {
       robot_arm->is_jogging = true;
-      jog_motor(motor1, M1_RPM, 1, 20);
+      jog_motor(motor1, M1_RPM, 1, 10);
     }
     else if (Process_Buffer[0] == 'W') // CCW
     {
       robot_arm->is_jogging = true;
-      jog_motor(motor1, M1_RPM, 0, 20);
+      jog_motor(motor1, M1_RPM, 0, 10);
     }
 
     // M2
@@ -1047,12 +1047,12 @@ void StartRobotArm(void *argument)
     if (Process_Buffer[4] == 'C') // CW
     {
       robot_arm->is_jogging = true;
-      jog_motor(motor2, M2_RPM, 1, 110);
+      jog_motor(motor2, M2_RPM, 1, 10);
     }
     else if (Process_Buffer[4] == 'W') // CCW
     {
       robot_arm->is_jogging = true;
-      jog_motor(motor2, M2_RPM, 0, 110);
+      jog_motor(motor2, M2_RPM, 0, 10);
     }
 
     // M3
@@ -1061,13 +1061,13 @@ void StartRobotArm(void *argument)
     {
       robot_arm->is_jogging = true;
       // M3_cont = (int)M3_RPM*2;
-      jog_motor(motor3, M3_RPM, 1, 180);
+      jog_motor(motor3, M3_RPM, 1, 10);
     }
     else if (Process_Buffer[8] == 'W') // CCW
     {
       robot_arm->is_jogging = true;
       // M3_cont = (int)M3_RPM*2;
-      jog_motor(motor3, M3_RPM, 0, 180);
+      jog_motor(motor3, M3_RPM, 0, 10);
     }
     // ==========================================================================
     
