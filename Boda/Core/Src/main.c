@@ -1117,7 +1117,7 @@ void StartRobotArm(void *argument)
         }
         osDelay(1000);
       }
-      if (Process_Buffer[12] == 'D')
+      else if (Process_Buffer[12] == 'D')
       {
         if (RxBuffer_PP1 != Process_Buffer[12])
         {
@@ -1133,23 +1133,34 @@ void StartRobotArm(void *argument)
     }
     // ==========================================================================
 
-    // ATTACHMENT
-    // [16] [17] [18] [19]
-    // 16 -> 'N' / 'A' for not active & active
-    // 17 -> Button input (Each Bit Is a Button Boolean)
-    // ==========================================================================
-    if (Process_Buffer[16] == 'A')
-    {
-      // INPUT BYTE
-      attach_input = Process_Buffer[17];
+    // // ATTACHMENT
+    // // [16] [17] [18] [19]
+    // // 16 -> 'N' / 'A' for not active & active
+    // // 17 -> Button input (Each Bit Is a Button Boolean)
+    // // 18 -> 'D' when disconnect and 'C' when connected
+    // // ==========================================================================
+    // if (Process_Buffer[16] == 'A')
+    // {
+    //   // INPUT BYTE
+    //   attach_input = Process_Buffer[17];
 
-      // PRINT INPUT BYTE
-      char ATTACH_VAL[10];
-      int ATTACH_INT = Process_Buffer[17];
-      sprintf(ATTACH_VAL, "%d\n", ATTACH_INT);
-      HAL_UART_Transmit(&huart2, (uint8_t*)ATTACH_VAL, strlen(ATTACH_VAL), 10);
-    }
-    // ==========================================================================
+    //   // PRINT INPUT BYTE
+    //   char ATTACH_VAL[10];
+    //   int ATTACH_INT = Process_Buffer[17];
+    //   sprintf(ATTACH_VAL, "%d\n", ATTACH_INT);
+    //   HAL_UART_Transmit(&huart2, (uint8_t*)ATTACH_VAL, strlen(ATTACH_VAL), 10);
+    // }
+    
+    // if (Process_Buffer[18] == 'D' && attachmentConnected)
+    // {
+    //   char ack_data[2];
+    //   ack_data[0] = 'C';
+    //   ack_data[1] = ID >> 8;
+    //   HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+    //   HAL_UART_Transmit(&huart2, &ack_data, 2, 10);
+    //   osDelay(1000);
+    // }
+    // // ==========================================================================
 
 
     // copy buffer to avoid repeated presses
@@ -1525,6 +1536,7 @@ void StartTESTING_THREAD(void *argument)
 
       new_connect = false;
       sent_update = false;
+      osDelay(100);
     }
     else if (!attachmentConnected)
     {
@@ -1541,9 +1553,41 @@ void StartTESTING_THREAD(void *argument)
         // HAL_UART_Transmit(&huart1, &no_attachment_char, 1, 10);
         // HAL_UART_Transmit(&huart2, &no_attachment_char, 1, 10);
         sent_update = true;
+        osDelay(100);
       }
       new_connect = true;
     }
+
+    // ATTACHMENT
+    // [16] [17] [18] [19]
+    // 16 -> 'N' / 'A' for not active & active
+    // 17 -> Button input (Each Bit Is a Button Boolean)
+    // 18 -> 'D' when disconnect and 'C' when connected
+    // ==========================================================================
+    if (Process_Buffer[16] == 'A')
+    {
+      // INPUT BYTE
+      attach_input = Process_Buffer[17];
+
+      // PRINT INPUT BYTE
+      char ATTACH_VAL[10];
+      int ATTACH_INT = Process_Buffer[17];
+      sprintf(ATTACH_VAL, "%d\n", ATTACH_INT);
+      HAL_UART_Transmit(&huart2, (uint8_t*)ATTACH_VAL, strlen(ATTACH_VAL), 10);
+    }
+    
+    if (Process_Buffer[18] == 'D' && attachmentConnected)
+    {
+      char ack_data[2];
+      ack_data[0] = 'C';
+      ack_data[1] = ID >> 8;
+      HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+      HAL_UART_Transmit(&huart2, &ack_data, 2, 10);
+      osDelay(1000);
+    }
+    // ==========================================================================
+
+
     // else
     // {
     //   old_ID = 0;
