@@ -194,7 +194,7 @@ enum States
 };
 
 // ======== ATTACHMENT VARIABLES =============
-uint8_t attach_input;
+volatile uint8_t attach_input;
 
 float rpm = 300;
 short microsteps = FULL_STEPS;
@@ -1134,20 +1134,21 @@ void StartRobotArm(void *argument)
     // ==========================================================================
 
     // ATTACHMENT
+    // [16] [17] [18] [19]
+    // 16 -> 'N' / 'A' for not active & active
+    // 17 -> Button input (Each Bit Is a Button Boolean)
     // ==========================================================================
-    if (Process_Buffer[16] = 'A')
+    if (Process_Buffer[16] == 'A')
     {
-      uint8_t tempCommand;
-      // COMMAND BYTE
-      tempCommand = Process_Buffer[17];
-      if(tempCommand){
-        TransmitReceiveCommand(tempCommand, 0);
-      }
-
       // INPUT BYTE
-      attach_input = Process_Buffer[18];
-    }
+      attach_input = Process_Buffer[17];
 
+      // PRINT INPUT BYTE
+      char ATTACH_VAL[10];
+      int ATTACH_INT = Process_Buffer[17];
+      sprintf(ATTACH_VAL, "%d\n", ATTACH_INT);
+      HAL_UART_Transmit(&huart2, (uint8_t*)ATTACH_VAL, strlen(ATTACH_VAL), 10);
+    }
     // ==========================================================================
 
 
@@ -1182,6 +1183,8 @@ void StartAttachment(void *argument)
   uint8_t buttonsBuffer[9] = {0, 0, 0, 0, 0, 0, 0, 0, '\n'};
   uint8_t buffer[3] = {0, 0, '\n'};
   uint8_t buttonsGotten = 0;
+
+  uint8_t inputs;
 
   uint8_t tempDelay = 0;
   uint8_t baseDelay = 4;
@@ -1240,16 +1243,9 @@ void StartAttachment(void *argument)
     // If an attachment is connected, send the inputs
     if (attachmentConnected)
     {
-      // Get the PS2Data Mutex
-      osMutexWait(mPS2DataHandle, 10);
-      for (int i = 0; i < 8; i++)
-      {
-        // Get the states of the buttons the controller wants
-        transmit |= (Is_Button_Pressed(&ps2, buttons[i]) << i);
-      }
-
-      // The mutex can be released here as it is no longer needed to be held. Helps free up time
-      osMutexRelease(mPS2DataHandle);
+      inputs = attach_input;
+      transmit |= inputs;
+      inputs = 0;
       osMessageQueueGet(qCommandQueueHandle, (uint16_t *)&attachmentCommand, 0U, 0U);
     }
 
@@ -1515,8 +1511,18 @@ void StartTESTING_THREAD(void *argument)
 
     if (attachmentConnected && new_connect)
     {
-      char attach_ID = ID >> 8;
-      HAL_UART_Transmit(&huart1, &attach_ID, 1, 10);
+      // char attach_ID = ID >> 8;
+      // HAL_UART_Transmit(&huart1, &attach_ID, 1, 10);
+      // HAL_UART_Transmit(&huart2, &attach_ID, 1, 10);
+
+
+      char ack_data[2];
+      ack_data[0] = 'C';
+      ack_data[1] = ID >> 8;
+      HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+      HAL_UART_Transmit(&huart2, &ack_data, 2, 10);
+
+
       new_connect = false;
       sent_update = false;
     }
@@ -1524,8 +1530,16 @@ void StartTESTING_THREAD(void *argument)
     {
       if (!sent_update)
       {
-        char no_attachment_char = '0';
-        HAL_UART_Transmit(&huart1, &no_attachment_char, 1, 10);
+
+        char ack_data[2];
+        ack_data[0] = 'C';
+        ack_data[1] = '0';
+        HAL_UART_Transmit(&huart1, &ack_data, 2, 10);
+        HAL_UART_Transmit(&huart2, &ack_data, 2, 10);
+
+        // char no_attachment_char = '0';
+        // HAL_UART_Transmit(&huart1, &no_attachment_char, 1, 10);
+        // HAL_UART_Transmit(&huart2, &no_attachment_char, 1, 10);
         sent_update = true;
       }
       new_connect = true;
