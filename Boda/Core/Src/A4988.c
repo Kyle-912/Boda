@@ -230,57 +230,6 @@ void move_stepper_deg(stepper *motor, double deg) {
     move_stepper_steps(motor, calcStepsForRotation(motor, deg), motor->rpm);
 }
 
-// void move_stepper_deg(stepper *motor, double deg) {
-
-//     if (motor->enable_microsteps){
-//         if (setMicrostep(motor) == -1)
-//         {
-//             // Error in setting microsteps
-//             return;
-//         }
-//     }
-
-//     // First attempt at opposite rotation
-//     if (deg < 0)
-//     {
-//         deg = deg * -1;
-//         motor->dir_state = 1;
-//     }
-//     else
-//     {
-//         motor->dir_state = 0;
-//     }
-
-//     // Set step output LOW
-//     HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
-
-//     // Set sleep output HIGH
-//     HAL_GPIO_WritePin(motor->sleep_port, motor->sleep_pin, SET);
-
-//     motor->steps_remaining = calcStepsForRotation(motor, deg);
-//     motor->step_pulse = STEP_PULSE(motor->max_steps, motor->microsteps, motor->rpm);
-//     // motor->step_count = 0;
-
-//     // Output DIR state
-//     HAL_GPIO_WritePin(motor->dir_port, motor->dir_pin, motor->dir_state);
-
-//     // Set the new pulse
-//     motor->timer->Instance->ARR = motor->step_pulse;
-//     if (HAL_TIM_Base_Init(motor->timer) != HAL_OK)
-//     {
-//         // Handle potential error
-//         asm("nop");
-//     }
-
-//     // Set timer to 0
-//     __HAL_TIM_SET_COUNTER(motor->timer, 0);
-
-//     // Start timer
-//     HAL_TIM_Base_Start_IT(motor->timer);
-
-//     // Handler will take care of the rest
-// }
-
 void end_movement(stepper *motor)
 {
     // Reset Step Pin
@@ -302,11 +251,11 @@ void end_movement(stepper *motor)
         if (motor->is_setup)
         {
             // Set up for motor finish
-            // Set timer to keep motor active 
+            // Set timer to keep motor active
             // This is so momentum of robot arm is stopped before motor turned off
             __HAL_TIM_SET_AUTORELOAD(motor->timer, motor->end_delay);
 
-            // finish setup 
+            // finish setup
             motor->is_setup = false;
         }
         else // setup is over and finish
@@ -367,7 +316,7 @@ void pulse_stepper(stepper *motor)
         // Check if within bounds of motor
         //--------------------------------
         // 1. if 0 and trying to decrease
-        if (motor->step_count <= 0 && motor->dir_state) 
+        if (motor->step_count <= 0 && motor->dir_state)
         {
             // reset step pin (don't keep step pin high)
             // HAL_GPIO_WritePin(motor->step_port, motor->step_pin, RESET);
@@ -468,7 +417,7 @@ void init_sinusoidal_vars(int total, double peak_rpm, double rise_time, stepper 
     if (2 * motor->ramp_steps > motor->total_steps) {
         motor->ramp_steps = motor->total_steps / 2;
     }
-    
+
     motor->max_delay = 60.0 / (peak_rpm * motor->max_steps); // Max delay in seconds
 }
 
@@ -503,7 +452,7 @@ float get_rpm_for_step(stepper *motor) {
     if (motor->current_step >= motor->total_steps) {
         return 0;
     }
-    
+
     if (motor->current_step < RAMP_STEPS) {
         // Ramp-up phase
         float ret_rpm = motor->rpm_values[motor->current_step];
