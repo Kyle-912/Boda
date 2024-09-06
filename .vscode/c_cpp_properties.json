@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/include",
-                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+                "${workspaceFolder}/Boda/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"
             ],
             "defines": [
                 "_DEBUG",

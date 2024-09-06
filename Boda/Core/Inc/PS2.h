@@ -1,4 +1,5 @@
 #include "stm32f4xx_hal.h"
+#include "stdbool.h"
 
 #ifndef PS2_CONTROLLER_H
 #define PS2_CONTROLLER_H
@@ -34,14 +35,12 @@
 #define DEADZONE_HI 0x9F
 #define DEADZONE_LO 0x5F
 
-typedef int bool; // Define a custom boolean type
-#define true 1    // Define true as 1
-#define false 0   // Define false as 0
-
 typedef struct
 {
-    GPIO_TypeDef *GPIO;
-    uint16_t PIN;
+    GPIO_TypeDef *Ack_GPIO;
+    uint16_t Ack_PIN;
+    GPIO_TypeDef *CS_GPIO;
+    uint16_t CS_PIN;
     SPI_HandleTypeDef *spi;
     TIM_HandleTypeDef *tim;
     uint8_t *PS2Data[7];

@@ -23,59 +23,90 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 
-  /* Private includes ----------------------------------------------------------*/
-  /* USER CODE BEGIN Includes */
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
-  /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-  /* Exported types ------------------------------------------------------------*/
-  /* USER CODE BEGIN ET */
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
 
-  /* USER CODE END ET */
+/* USER CODE END ET */
 
-  /* Exported constants --------------------------------------------------------*/
-  /* USER CODE BEGIN EC */
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
 
-  /* USER CODE END EC */
+/* USER CODE END EC */
 
-  /* Exported macro ------------------------------------------------------------*/
-  /* USER CODE BEGIN EM */
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
 
-  /* USER CODE END EM */
+/* USER CODE END EM */
 
-  /* Exported functions prototypes ---------------------------------------------*/
-  void Error_Handler(void);
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define B1_Pin GPIO_PIN_13
-#define B1_GPIO_Port GPIOC
-#define USART_TX_Pin GPIO_PIN_2
-#define USART_TX_GPIO_Port GPIOA
-#define USART_RX_Pin GPIO_PIN_3
-#define USART_RX_GPIO_Port GPIOA
-#define LD2_Pin GPIO_PIN_5
-#define LD2_GPIO_Port GPIOA
-#define TMS_Pin GPIO_PIN_13
-#define TMS_GPIO_Port GPIOA
-#define TCK_Pin GPIO_PIN_14
-#define TCK_GPIO_Port GPIOA
-#define SWO_Pin GPIO_PIN_3
-#define SWO_GPIO_Port GPIOB
+#define Base_STEP_Pin GPIO_PIN_13
+#define Base_STEP_GPIO_Port GPIOC
+#define Base_SLEEP_Pin GPIO_PIN_14
+#define Base_SLEEP_GPIO_Port GPIOC
+#define COM_TX_Pin GPIO_PIN_2
+#define COM_TX_GPIO_Port GPIOA
+#define COM_RX_Pin GPIO_PIN_3
+#define COM_RX_GPIO_Port GPIOA
+#define Shoulder_DIR_Pin GPIO_PIN_6
+#define Shoulder_DIR_GPIO_Port GPIOA
+#define Shoulder_STEP_Pin GPIO_PIN_7
+#define Shoulder_STEP_GPIO_Port GPIOA
+#define Elbow_SLEEP_Pin GPIO_PIN_5
+#define Elbow_SLEEP_GPIO_Port GPIOC
+#define PS2_Controller_SCK_Pin GPIO_PIN_10
+#define PS2_Controller_SCK_GPIO_Port GPIOB
+#define Blue_Button_Pin GPIO_PIN_13
+#define Blue_Button_GPIO_Port GPIOB
+#define PS2_Controller_Command_Pin GPIO_PIN_14
+#define PS2_Controller_Command_GPIO_Port GPIOB
+#define PS2_Controller_Data_Pin GPIO_PIN_15
+#define PS2_Controller_Data_GPIO_Port GPIOB
+#define Elbow_STEP_Pin GPIO_PIN_6
+#define Elbow_STEP_GPIO_Port GPIOC
+#define Elbow_DIR_Pin GPIO_PIN_8
+#define Elbow_DIR_GPIO_Port GPIOC
+#define Bluetooth_TX_Pin GPIO_PIN_9
+#define Bluetooth_TX_GPIO_Port GPIOA
+#define Bluetooth_RX_Pin GPIO_PIN_10
+#define Bluetooth_RX_GPIO_Port GPIOA
+#define Attachment_SCK_Pin GPIO_PIN_10
+#define Attachment_SCK_GPIO_Port GPIOC
+#define Attachment_MISO_Pin GPIO_PIN_11
+#define Attachment_MISO_GPIO_Port GPIOC
+#define Attachment_MOSI_Pin GPIO_PIN_12
+#define Attachment_MOSI_GPIO_Port GPIOC
+#define Attachment_GPIO_Pin GPIO_PIN_2
+#define Attachment_GPIO_GPIO_Port GPIOD
+#define PS2_Controller_CS_Pin GPIO_PIN_4
+#define PS2_Controller_CS_GPIO_Port GPIOB
+#define PS2_Controller_Ack_Pin GPIO_PIN_5
+#define PS2_Controller_Ack_GPIO_Port GPIOB
+#define Shoulder_SLEEP_Pin GPIO_PIN_6
+#define Shoulder_SLEEP_GPIO_Port GPIOB
+#define Base_DIR_Pin GPIO_PIN_7
+#define Base_DIR_GPIO_Port GPIOB
 
-  /* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
-  /* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }
